@@ -1,6 +1,8 @@
 @import './base.css';
 
 #app {
+  background-image: url('backgrounds/john-towner-JgOeRuGD_Y4-unsplash.jpg');
+  background-color: #cccccc;
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
