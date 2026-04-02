@@ -7,12 +7,17 @@ const cellSize = ref(22)
 const height = ref(19)
 const width = ref(10)
 
-const test = ref([1, 1, 1, 1])
 let id = 0
 const nextCells = ref([
   { id: id++, type: 'O', x: 0.5, y: 0.5, r: 0 },
   { id: id++, type: 'L', x: 5, y: 5, r: 1 },
   { id: id++, type: 'T', x: 2, y: 10, r: 2 },
+])
+
+const ground = ref([
+  [1, 1, 0, 1],
+  [1, 0, 1, 1, 0, 0, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1],
 ])
 </script>
 
