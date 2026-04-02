@@ -19,8 +19,6 @@ const Shape = computed(() => {
   return shape
 })
 
-console.log(Shape.value)
-
 const offset = computed(() => Math.floor(Shape.value.length / 2))
 const startX = computed(() => Math.max(props.x - offset.value, 0))
 const startY = computed(() => Math.max(props.y - offset.value, 0))
