@@ -3,10 +3,17 @@ import { ref } from 'vue'
 import PieceComponent from '@/components/PieceComponent.vue'
 import GroundHandler from '@/components/GroundHandler.vue'
 import NextPiecesHandler from '@/components/NextPiecesHandler.vue'
+import HoldComponent from '@/components/HoldComponent.vue'
 
 const cellSize = ref(22)
 const height = ref(19)
 const width = ref(10)
+
+const piece = ref('N')
+
+function addHold(type: string) {
+  piece.value = type
+}
 
 let id = 0
 const nextCells = ref([
@@ -27,7 +34,7 @@ function newPieces(nType: string) {
   nextPieces.value.forEach((piece) => {
     piece.id = id - 1
   })
-  nextPieces.value.push({ id: 5, type: nType })
+  nextPieces.value.push({ id: nextPieces.value.length, type: nType })
 }
 
 const nextPieces = ref([
@@ -36,19 +43,30 @@ const nextPieces = ref([
   { id: 2, type: 'T' },
   { id: 3, type: 'S' },
   { id: 4, type: 'I' },
-  { id: 5, type: 'J' },
 ])
 
-const ground = ref([
-  [1, 1, 0, 1],
-  [1, 0, 1, 1, 0, 0, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1],
-])
+function addGround(h: number) {
+  const nArray = Array<number>(width.value).fill(1)
+  nArray[Math.floor(Math.random() * width.value)] = 0
+  for (let i = 0; i < h; i++) {
+    ground.value.push(nArray)
+  }
+}
+
+const ground = ref(Array(height.value))
+addGround(3)
+addGround(1)
 </script>
 
 <template>
-  <button @click="newPieces(randomType())">New Pieces (Random)</button>
+  <button @click="newPieces(randomType())">New Pieces</button>
+  <button @click="addHold(randomType())">Hold Piece</button>
+  <button @click="addGround(1)">Add Ground</button>
   <div class="player">
+    <div :style="{ height: cellSize * 4 + 'px', width: cellSize * 5 + 'px' }" class="holdPieces">
+      <div class="HOLD">HOLD</div>
+      <hold-component :piece="piece" :cell-size="cellSize" />
+    </div>
     <div :style="{ height: cellSize * height + 'px', width: cellSize * width + 'px' }" class="game">
       <piece-component
         v-for="cell in nextCells"
@@ -62,9 +80,10 @@ const ground = ref([
       <ground-handler :ground="ground" :cell-size="cellSize" :y="height" />
     </div>
     <div
-      :style="{ height: cellSize * (6 * 3 + 1) + 'px', width: cellSize * 5 + 'px' }"
+      :style="{ height: cellSize * (5 * 3 + 1) + 'px', width: cellSize * 5 + 'px' }"
       class="nextPieces"
     >
+      <div class="NEXT">NEXT</div>
       <next-pieces-handler :next-pieces="nextPieces" :cellSize="cellSize" />
     </div>
   </div>
@@ -74,27 +93,46 @@ const ground = ref([
 .player {
   white-space: nowrap;
   display: inline-block;
-  background: #e2f5ec;
-  color: #222;
-  border: solid 1px #b7b7b7;
 }
 
 .player > * {
   display: inline-block;
   vertical-align: top;
+  background-color: rgb(0 0 0 / 0.67);
+  position: relative;
+  overflow: hidden;
+  border: solid 10px white;
+  border-top-width: 0;
 }
 
 .game {
-  position: relative;
-  outline: solid 1px gray;
-  background-color: black;
-  overflow: hidden;
+  border-bottom-left-radius: 10px;
+  corner-bottom-left-shape: bevel;
+  border-bottom-right-radius: 10px;
+  corner-bottom-right-shape: bevel;
+}
+
+.holdPieces {
+  border-right-width: 0;
+  border-bottom-left-radius: 20px;
+  corner-bottom-left-shape: bevel;
+}
+
+.HOLD {
+  text-align: right;
+  color: black;
+  background-color: white;
 }
 
 .nextPieces {
-  position: relative;
-  outline: solid 1px gray;
-  background-color: black;
-  overflow: hidden;
+  border-left-width: 0;
+  border-bottom-right-radius: 20px;
+  corner-bottom-right-shape: bevel;
+}
+
+.NEXT {
+  text-align: right;
+  color: black;
+  background-color: white;
 }
 </style>

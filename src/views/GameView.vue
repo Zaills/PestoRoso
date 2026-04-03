@@ -19,5 +19,8 @@ import PlayerHandler from '@/components/PlayerHandler.vue'
   right: 0;
 
   margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
