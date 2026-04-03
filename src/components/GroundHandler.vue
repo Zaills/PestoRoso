@@ -1,14 +1,30 @@
 <script setup lang="ts">
 import BlockRenderer from '@/components/BlockRenderer.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
-  ground: Array<Array<number>>
+  height: number
+  width: number
   cellSize: number
-  y: number
 }>()
 
-const groundHeight = computed(() => props.y - props.ground.length)
+function addGround(h: number) {
+  const nArray = Array<number>(props.width).fill(1)
+  nArray[Math.floor(Math.random() * props.width)] = 0
+  for (let i = 0; i < h; i++) {
+    ground.value.push(nArray)
+  }
+}
+
+const ground = ref(Array(props.height))
+addGround(3)
+addGround(1)
+
+const groundHeight = computed(() => props.height - ground.value.length)
+
+defineExpose({
+  addGround,
+})
 </script>
 
 <template>

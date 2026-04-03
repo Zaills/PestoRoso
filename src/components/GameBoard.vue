@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import PieceComponent from '@/components/PieceComponent.vue'
 import GroundHandler from '@/components/GroundHandler.vue'
 import NextPiecesHandler from '@/components/NextPiecesHandler.vue'
@@ -9,10 +9,22 @@ const cellSize = ref(22)
 const height = ref(19)
 const width = ref(10)
 
-const piece = ref('N')
+const nextRef = useTemplateRef('nextChild')
 
-function addHold(type: string) {
-  piece.value = type
+function nextClicked() {
+  nextRef.value.newPieces(randomType())
+}
+
+const holdRef = useTemplateRef('holdChild')
+
+function holdClicked() {
+  holdRef.value.addHold(randomType())
+}
+
+const groundRef = useTemplateRef('groundChild')
+
+function groundClicked() {
+  groundRef.value.addGround(1)
 }
 
 let id = 0
@@ -27,45 +39,16 @@ function randomType(): string {
   const types = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
   return types[Math.floor(Math.random() * types.length)]
 }
-
-function newPieces(nType: string) {
-  nextPieces.value.reverse().pop()
-  nextPieces.value.reverse()
-  nextPieces.value.forEach((piece) => {
-    piece.id = id - 1
-  })
-  nextPieces.value.push({ id: nextPieces.value.length, type: nType })
-}
-
-const nextPieces = ref([
-  { id: 0, type: 'O' },
-  { id: 1, type: 'L' },
-  { id: 2, type: 'T' },
-  { id: 3, type: 'S' },
-  { id: 4, type: 'I' },
-])
-
-function addGround(h: number) {
-  const nArray = Array<number>(width.value).fill(1)
-  nArray[Math.floor(Math.random() * width.value)] = 0
-  for (let i = 0; i < h; i++) {
-    ground.value.push(nArray)
-  }
-}
-
-const ground = ref(Array(height.value))
-addGround(3)
-addGround(1)
 </script>
 
 <template>
-  <button @click="newPieces(randomType())">New Pieces</button>
-  <button @click="addHold(randomType())">Hold Piece</button>
-  <button @click="addGround(1)">Add Ground</button>
+  <button @click="nextClicked">New Pieces</button>
+  <button @click="holdClicked">Hold Piece</button>
+  <button @click="groundClicked">Add Ground</button>
   <div class="player">
     <div :style="{ height: cellSize * 4 + 'px', width: cellSize * 5 + 'px' }" class="holdPieces">
       <div class="HOLD">HOLD</div>
-      <hold-component :piece="piece" :cell-size="cellSize" />
+      <hold-component :cell-size="cellSize" ref="holdChild" />
     </div>
     <div :style="{ height: cellSize * height + 'px', width: cellSize * width + 'px' }" class="game">
       <piece-component
@@ -77,14 +60,19 @@ addGround(1)
         :y="cell.y"
         :r="cell.r"
       />
-      <ground-handler :ground="ground" :cell-size="cellSize" :y="height" />
+      <ground-handler
+        :height="height"
+        :width="width"
+        :cell-size="cellSize"
+        ref="groundChild"
+      />
     </div>
     <div
       :style="{ height: cellSize * (5 * 3 + 1) + 'px', width: cellSize * 5 + 'px' }"
       class="nextPieces"
     >
       <div class="NEXT">NEXT</div>
-      <next-pieces-handler :next-pieces="nextPieces" :cellSize="cellSize" />
+      <next-pieces-handler :cellSize="cellSize" ref="nextChild" />
     </div>
   </div>
 </template>
