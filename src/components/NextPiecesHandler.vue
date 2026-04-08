@@ -35,7 +35,7 @@ defineProps<{
       :type="piece.type"
       :cellSize="cellSize"
       :x="2.5"
-      :y="3.5 + index * 3"
+      :y="2.5 + index * 3"
       :r="0"
     />
     <piece-component

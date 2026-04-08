@@ -23,7 +23,7 @@ defineProps<{
     :type="piece"
     :cellSize="cellSize"
     :x="2.5"
-    :y="3.9"
+    :y="2.9"
     :r="0"
   />
   <piece-component

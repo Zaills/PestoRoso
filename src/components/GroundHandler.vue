@@ -9,6 +9,7 @@ const props = defineProps<{
 }>()
 
 function addGround(h: number) {
+  if (ground.value.length >= props.height) return
   const nArray = Array<number>(props.width).fill(1)
   nArray[Math.floor(Math.random() * props.width)] = 0
   for (let i = 0; i < h; i++) {
@@ -16,7 +17,7 @@ function addGround(h: number) {
   }
 }
 
-const ground = ref(Array(props.height))
+const ground = ref(Array(0))
 addGround(3)
 addGround(1)
 
