@@ -31,7 +31,7 @@ function joinRoom() {
   socket.connect()
   socket.emit('join_room', { room: room.value, name: name.value })
 
-  socket.on('user_joined', (sName) => {
+  socket.on('room_update', (sName) => {
     if (name.value === sName) router.push({ path: `/${room.value}/${name.value}` })
   })
 }
