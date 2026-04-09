@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PieceComponent from '@/components/PieceComponent.vue'
+import PieceComponent from '@/components/game/PieceComponent.vue'
 import { ref } from 'vue'
 
 const piece = ref('N')

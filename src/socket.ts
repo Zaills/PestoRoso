@@ -3,7 +3,9 @@ import { io } from 'socket.io-client'
 
 const URL = 'http://localhost:3000'
 
-export const socket = io(URL)
+export const socket = io(URL, {
+  autoConnect: false
+})
 
 export const state = reactive({
   connected: false,
@@ -16,3 +18,8 @@ socket.on('connect', () => {
 socket.on('disconnect', () => {
   state.connected = false
 })
+
+socket.on('receive_message', (message) => {
+  console.log(message)
+})
+

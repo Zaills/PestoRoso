@@ -1,5 +1,30 @@
 <script setup lang="ts">
-import PlayerHandler from '@/components/PlayerHandler.vue'
+import PlayerHandler from '@/components/game/PlayerHandler.vue'
+import { onMounted, onUnmounted } from 'vue'
+import { socket } from '@/socket.ts'
+import router from '@/router'
+
+onMounted(() => {
+  if (socket.connected) return
+  socket.connect()
+  const url = window.location.href
+  const length = url.split('/').length
+  if (length !== 5) {
+    router.push('home')
+    return
+  }
+  const room = url.split('/')[length - 2]
+  const name = url.split('/')[length - 1]
+  if (name === '' || room == 'roomId') {
+    router.push('home')
+    return
+  }
+  socket.emit('join_room', { room: room, name: name })
+})
+
+onUnmounted(() => {
+  socket.disconnect()
+})
 </script>
 
 <template>

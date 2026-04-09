@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import GameBoard from '@/components/GameBoard.vue'
+
 </script>
 
 <template>
-  <div>
-    <GameBoard/>
+  <div class="title">
+    RED TETRIS
   </div>
 </template>
 
 <style scoped>
+.title {
 
+}
 
 </style>
