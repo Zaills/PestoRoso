@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import PlayerHandler from '@/components/game/PlayerHandler.vue'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { socket } from '@/socket.ts'
 import router from '@/router'
+
+const playerList = ref([])
+const spectatorList = ref([])
 
 onMounted(() => {
   if (socket.connected) return
@@ -22,13 +25,31 @@ onMounted(() => {
   socket.emit('join_room', { room: room, name: name })
 })
 
+socket.on('room_update', (players, spectators) => {
+  playerList.value = players
+  spectatorList.value = spectators
+})
+
 onUnmounted(() => {
   socket.disconnect()
 })
+
+function debug() {
+  console.log(playerList.value)
+  console.log(spectatorList.value)
+}
 </script>
 
 <template>
   <div class="game">
+    <button @click="debug">Debug</button>
+    <template v-for="(player, index) in playerList" :key="index">
+      {{ player }}
+    </template>
+
+    <template v-for="(spectator, index) in spectatorList" :key="index">
+      {{ spectator }}
+    </template>
     <PlayerHandler></PlayerHandler>
   </div>
 </template>

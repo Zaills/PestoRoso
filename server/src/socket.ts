@@ -9,8 +9,8 @@ interface ClientToServerEvents {
 }
 
 interface ServerToClientEvents {
-  receive_message: (message: string) => void;
-  user_joined: (username: string, currentUsers: number) => void;
+  receive_message: (message: string) => void
+  room_update: (Player: string[], Spectator: string[]) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>;
@@ -43,7 +43,6 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('join_room', ({ room, name }) => {
       joinOrCreateGame(room, name, socket)
-      socket.emit('user_joined', name, 1)
     })
 
   })

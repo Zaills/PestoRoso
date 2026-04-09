@@ -10,7 +10,54 @@ interface player {
 export function joinOrCreateGame(room: string, name: string, socket: Socket) {
   const player: player = { name, socket }
   if (games.has(room)) joinRoom(room, player)
-  else games.set(room, { player: [player], spectators: [], started: false, pieces: [] })
+  else createRoom(room, player)
+
+  updateGameRoom(room)
+}
+
+function updateGameRoom(room: string) {
+  const gameRoom = games.get(room)!
+  const playerList = []
+  const spectatorList = []
+  gameRoom.players.forEach((player) => {
+    playerList.push(player.name)
+  })
+  gameRoom.spectators.forEach((player) => {
+    playerList.push(player.name)
+  })
+
+  gameRoom.players.forEach((gamePlayer) => {
+    gamePlayer.socket.emit('room_update', playerList, spectatorList)
+  })
+}
+
+function createRoom(room: string, player: player) {
+  games.set(room, { players: [player], spectators: [], started: false, pieces: [] })
+}
+
+function joinRoom(room: string, player: player) {
+  const gameRoom = games.get(room)
+  if (gameRoom.started) {
+    gameRoom.spectators.push(player)
+  } else {
+    gameRoom.players.push(player)
+  }
+}
+
+export function leaveRoom(socket: Socket) {
+  const toDelete = []
+  games.forEach((game, key) => {
+    game.players = game.players.filter(
+      (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
+        players.socket !== socket,
+    )
+    if (game.players.length === 0) {
+      toDelete.push(key)
+    } else {
+      updateGameRoom(key)
+    }
+  })
+  toDelete.forEach((game) => games.delete(game))
 }
 
 function startGame(room: string, name: string) {
@@ -19,27 +66,3 @@ function startGame(room: string, name: string) {
     //generate pieces
   }
 }
-
-function joinRoom(room: string, player: player) {
-  const gameRoom = games.get(room)
-  if (gameRoom.started) {
-    gameRoom.spectators.push(player)
-  } else {
-    gameRoom.player.push(player)
-  }
-}
-
-export function leaveRoom(socket: Socket) {
-  const toDelete = []
-  games.forEach((game, key) => {
-    game.player = game.player.filter(
-      (player: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
-        player.socket !== socket,
-    )
-    if (game.player.length === 0) {
-       toDelete.push(key)
-    }
-  })
-  toDelete.forEach(game => games.delete(game))
-}
-
