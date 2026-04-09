@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import jsonShape from '@/assets/tetriminoShape.json'
-import BlockRenderer from '@/components/BlockRenderer.vue'
+import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { computed } from 'vue'
 
 const props = defineProps<{

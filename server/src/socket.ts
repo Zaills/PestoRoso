@@ -1,9 +1,11 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
+import { joinOrCreateGame, leaveRoom } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
-  send_message: (message: string) => void;
-  join_room: (roomName: string) => void;
+  send_message: (message: string) => void
+  join_room: ({ room, name }) => void
+  key_press: (key: string) => void
 }
 
 interface ServerToClientEvents {
@@ -18,7 +20,7 @@ export const initSocket = (httpServer: HttpServer) => {
     cors: {
       origin: 'http://localhost:5173',
       methods: ['GET', 'POST'],
-    },
+    }
   })
 
   io.on('connection', (socket) => {
@@ -27,12 +29,23 @@ export const initSocket = (httpServer: HttpServer) => {
     socket.on('send_message', (message) => {
       console.log(`Message from ${socket.id}: ${message}`)
 
-      io.emit('receive_message', message)
+      socket.emit('receive_message', message)
     })
 
     socket.on('disconnect', () => {
+      leaveRoom(socket)
       console.log(`🔴 User disconnected: ${socket.id}`)
     })
+
+    socket.on('key_press', (key) => {
+      socket.emit('receive_message', `Valid Key pressed: ${key}`)
+    })
+
+    socket.on('join_room', ({ room, name }) => {
+      joinOrCreateGame(room, name, socket)
+      socket.emit('user_joined', name, 1)
+    })
+
   })
 
   return io;
