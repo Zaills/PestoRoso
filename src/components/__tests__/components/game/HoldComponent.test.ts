@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import HoldComponent from '../../HoldComponent.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import HoldComponent from '@/components/game/HoldComponent.vue'
 
 
 describe('Hold', () => {
@@ -13,10 +15,6 @@ describe('Hold', () => {
   const stubs = {
     PieceComponent: true
   }
-
-  it('Should render properly', async () => {
-    const wrapper = mount(HoldComponent, stubs)
-  })
 
   it('default state ("N")', () => {
     const wrapper = mount(HoldComponent, {
@@ -62,7 +60,10 @@ describe('Hold', () => {
   })
 
   it('Replace hold', async () => {
-    const wrapper = mount(HoldComponent, { global: { stubs } })
+    const wrapper = mount(HoldComponent, {
+      props: { cellSize },
+      global: { stubs },
+    })
 
     wrapper.vm.addHold('T')
     await wrapper.vm.$nextTick()

@@ -1,6 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import GameBoard from '../../GameBoard.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import GameBoard from '@/components/game/GameBoard.vue'
 
 
 describe('GameBoard', () => {

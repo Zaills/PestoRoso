@@ -1,6 +1,8 @@
-import { beforeEach, describe, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import PlayerHandler from '../../PlayerHandler.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import PlayerHandler from '@/components/game/PlayerHandler.vue'
 
 describe('PlayerHandler', () => {
   beforeEach(() => {
@@ -13,5 +15,6 @@ describe('PlayerHandler', () => {
 
   it('Should render properly', () => {
     const wrapper = mount(PlayerHandler, { global: { stubs } })
+    expect(wrapper.find('div').exists()).toBe(true)
   })
 })

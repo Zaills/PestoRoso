@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import BlockRenderer from '../../BlockRenderer.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import BlockRenderer from '@/components/game/BlockRenderer.vue'
 
 
 describe('Block Render', () => {

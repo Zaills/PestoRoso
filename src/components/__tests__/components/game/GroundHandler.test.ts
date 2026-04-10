@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import GroundHandler from '../../GroundHandler.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import GroundHandler from '@/components/game/GroundHandler.vue'
 
 
 describe('Ground', () => {
@@ -16,10 +18,6 @@ describe('Ground', () => {
     width: 10,
     cellSize: 20,
   }
-
-  it('Should render properly', () => {
-    const wrapper = mount(GroundHandler, { global: { stubs }})
-  })
 
   it('Calculate Y coordinate', async () => {
     const wrapper = mount(GroundHandler, {

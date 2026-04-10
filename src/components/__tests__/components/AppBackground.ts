@@ -29,7 +29,6 @@ describe('Background', () => {
 
   it('updates the background image when the route changes', async () => {
     const wrapper = mount(AppBackground)
-    const initialStyle = wrapper.find('.main-bg-container').attributes('style')
 
     vi.spyOn(Math, 'random').mockReturnValue(0.99)
     mockRoute.value = { path: '/about' }

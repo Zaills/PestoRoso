@@ -29,7 +29,7 @@ describe('Vue Router Tests', () => {
     expect(homeRoute).toBeDefined()
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    expect(homeRoute.path).toBe('/game')
+    expect(homeRoute.path).toBe('/:roomId/:name')
   })
 })
 

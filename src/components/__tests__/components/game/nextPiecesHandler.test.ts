@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import NextPiecesHandler from '../../NextPiecesHandler.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 
 
 describe('NextPieces', () => {
@@ -13,14 +15,10 @@ describe('NextPieces', () => {
   }
   const cellSize= 20
 
-  it('Should render properly', () => {
-    const wrapper = mount(NextPiecesHandler, { global: { stubs } })
-  })
-
   it('shifts pieces', async () => {
     const wrapper = mount(NextPiecesHandler, {
       props: { cellSize },
-      global: { stubs: { PieceComponent: true } },
+      global: { stubs },
     })
 
     wrapper.vm.newPieces('Z')
