@@ -14,10 +14,8 @@ onMounted(() => {
 })
 
 function updateBackground() {
-  if (imageList.length > 0) {
-    const randomIndex = Math.floor(Math.random() * imageList.length)
-    selectedImage.value = imageList[randomIndex]
-  }
+  const randomIndex = Math.floor(Math.random() * imageList.length)
+  selectedImage.value = imageList[randomIndex]
 }
 
 const route = useRoute()
