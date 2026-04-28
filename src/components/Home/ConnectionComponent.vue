@@ -29,11 +29,6 @@ function joinRoom() {
 
   console.log(name)
   socket.connect()
-  socket.emit('join_room', { room: room.value, name: name.value })
-
-  socket.on('room_update', (sName) => {
-    if (name.value === sName) router.push({ path: `/${room.value}/${name.value}` })
-  })
 }
 </script>
 
@@ -42,7 +37,7 @@ function joinRoom() {
   <input v-model="room" placeholder="Room" @input="roomUpdated" />
   <RouterLink
     v-if="room != 'roomId' && name != ''"
-    to="roomId/name"
+    :to="room + '/' + name"
     @click="joinRoom()"
     class="joinButton"
     >{{ buttonText }}</RouterLink

@@ -30,7 +30,6 @@ nav {
   margin-top: 2rem;
 }
 
-
 nav a {
   display: inline-block;
   padding: 0 1rem;
@@ -40,5 +39,4 @@ nav a {
 nav a:first-of-type {
   border: 0;
 }
-
 </style>

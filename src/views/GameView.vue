@@ -34,30 +34,18 @@ onUnmounted(() => {
   socket.disconnect()
 })
 
-function debug() {
-  console.log(playerList.value)
-  console.log(spectatorList.value)
-}
 </script>
 
 <template>
   <div class="game">
-    <button @click="debug">Debug</button>
-    <template v-for="(player, index) in playerList" :key="index">
-      {{ player }}
-    </template>
-
-    <template v-for="(spectator, index) in spectatorList" :key="index">
-      {{ spectator }}
-    </template>
-    <PlayerHandler></PlayerHandler>
+    <PlayerHandler :playerList="playerList" :ViewerList="spectatorList"/>
   </div>
 </template>
 
 <style scoped>
 .game {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 100%;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -68,5 +56,6 @@ function debug() {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: -1;
 }
 </style>

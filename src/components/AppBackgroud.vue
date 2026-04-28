@@ -37,23 +37,6 @@ watch(route, updateBackground)
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  z-index: -1; /* Keeps it behind everything */
-}
-
-.bg-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.content-layer {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: -1000; /* Keeps it behind everything */
 }
 </style>

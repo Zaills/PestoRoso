@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import TitleComponent from '@/components/Home/TitleComponent.vue'
 import ConnectionComponent from '@/components/Home/ConnectionComponent.vue'
-
 </script>
 
 <template>
   <main>
     <title-component />
-    <connection-component/>
+    <connection-component />
   </main>
 </template>
 

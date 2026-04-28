@@ -1,11 +1,12 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
-import { joinOrCreateGame, leaveRoom } from '../assets/gamesManager'
+import { joinOrCreateGame, leaveRoom, changeTeam } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
   join_room: ({ room, name }) => void
   key_press: (key: string) => void
+  change_team: ({room, name}) => void
 }
 
 interface ServerToClientEvents {
@@ -43,6 +44,10 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('join_room', ({ room, name }) => {
       joinOrCreateGame(room, name, socket)
+    })
+
+    socket.on('change_team', ({room, name}) => {
+      changeTeam(room, name, socket)
     })
 
   })
