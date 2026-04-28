@@ -11,6 +11,7 @@ describe('PlayerHandler', () => {
 
   const stubs = {
     GameBoard: true,
+    waitingRoom: true,
   }
 
   it('Should render properly', () => {
