@@ -6,7 +6,7 @@ interface ClientToServerEvents {
   send_message: (message: string) => void
   join_room: ({ room, name }) => void
   key_press: (key: string) => void
-  change_team: ({room, name}) => void
+  change_team: ({ room, name }) => void
 }
 
 interface ServerToClientEvents {
@@ -14,14 +14,14 @@ interface ServerToClientEvents {
   room_update: (Player: string[], Spectator: string[]) => void
 }
 
-export let io: Server<ClientToServerEvents, ServerToClientEvents>;
+export let io: Server<ClientToServerEvents, ServerToClientEvents>
 
 export const initSocket = (httpServer: HttpServer) => {
   io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
       origin: 'http://localhost:5173',
       methods: ['GET', 'POST'],
-    }
+    },
   })
 
   io.on('connection', (socket) => {
@@ -46,11 +46,10 @@ export const initSocket = (httpServer: HttpServer) => {
       joinOrCreateGame(room, name, socket)
     })
 
-    socket.on('change_team', ({room, name}) => {
+    socket.on('change_team', ({ room, name }) => {
       changeTeam(room, name, socket)
     })
-
   })
 
-  return io;
-};
+  return io
+}
