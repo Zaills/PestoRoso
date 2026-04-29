@@ -15,7 +15,13 @@ describe('PlayerHandler', () => {
   }
 
   it('Should render properly', () => {
-    const wrapper = mount(PlayerHandler, { global: { stubs } })
+    const wrapper = mount(PlayerHandler, {
+      global: { stubs },
+      props: {
+        playerList: [],
+        ViewerList: []
+      },
+    })
     expect(wrapper.find('div').exists()).toBe(true)
   })
 })
