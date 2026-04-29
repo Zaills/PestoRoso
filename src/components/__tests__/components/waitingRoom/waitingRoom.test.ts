@@ -36,7 +36,7 @@ describe('Waiting Room', () => {
 
   const stubs = { PlayerIcon: true }
   const defaultProps = {
-    playerList: ['Alice', 'Bob'],
+    playerList: ['Alex', 'Bob'],
     ViewerList: ['Charlie'],
   }
 
@@ -50,13 +50,13 @@ describe('Waiting Room', () => {
     const icons = wrapper.findAllComponents({ name: 'PlayerIcon' })
     expect(icons.length).toBe(3)
 
-    expect(icons[0].props('player')).toBe('Alice')
+    expect(icons[0].props('player')).toBe('Alex')
     expect(icons[1].props('player')).toBe('Bob')
     expect(icons[2].props('player')).toBe('Charlie')
   })
 
   it('Start Game button should be define for the 1st User', async () => {
-    setMockUrl('http://localhost:3000/roomA/Alice')
+    setMockUrl('http://localhost:3000/roomA/Alex')
     const wrapper = mount(WaitingRoom, {
       global: { stubs },
       props: defaultProps,
@@ -68,7 +68,7 @@ describe('Waiting Room', () => {
     expect(startButton).toBeDefined()
 
     await startButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alice' })
+    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex' })
   })
 
   it('Start Game button should not be define for the 2st User', () => {
