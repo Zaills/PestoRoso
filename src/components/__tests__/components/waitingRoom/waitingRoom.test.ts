@@ -68,7 +68,7 @@ describe('Waiting Room', () => {
     expect(startButton).toBeDefined()
 
     await startButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex' })
+    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: "roomA" })
   })
 
   it('Start Game button should not be define for the 2st User', () => {

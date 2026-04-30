@@ -21,15 +21,15 @@ socket.on('room_update', (players, spectators) => {
   spectatorList.value = spectators
 })
 
+
 onUnmounted(() => {
   socket.disconnect()
 })
-
 </script>
 
 <template>
   <div class="game">
-    <PlayerHandler :playerList="playerList" :ViewerList="spectatorList"/>
+    <PlayerHandler :playerList="playerList" :ViewerList="spectatorList" />
   </div>
 </template>
 

@@ -80,12 +80,29 @@ export function leaveRoom(socket: Socket) {
   toDelete.forEach((game) => games.delete(game))
 }
 
-function startGame(room: string, name: string) {
-  if (games.has(room) && games.get(room).player[0] == name) {
-    games.get(room).started = true
+export function startGame(room: string, name: string, socket: Socket) {
+  if (games.has(room) && games.get(room).players[0].name == name && games.get(room).players[0].socket == socket) {
+    const gameRoom = games.get(room)
+    gameRoom.started = true
     //generate pieces
+
+    gameRoom.players.forEach(
+      (
+        player:
+          | { socket: { emit: (arg0: string, arg1: boolean) => void } }
+          | undefined,
+      ) => {
+        if (player !== undefined) player.socket.emit('game_status', true)
+      },
+    )
+    gameRoom.spectators.forEach(
+      (player: { socket: { emit: (arg0: string, arg1: boolean) => void } } | undefined) => {
+        if (player !== undefined) player.socket.emit('game_status', true)
+      },
+    )
   }
 }
+
 export function changeTeam(room: string, name: string, socket: Socket) {
   if (!games.has(room) && name != null) return
   const gameRoom = games.get(room)!

@@ -17,7 +17,7 @@ function changeTeam() {
 }
 
 function startGame() {
-  socket.emit('start_game', { name })
+  socket.emit('start_game', { room: room, name: name })
 }
 </script>
 

@@ -1,21 +1,19 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
-import { joinOrCreateGame, leaveRoom, changeTeam } from '../assets/gamesManager'
+import { joinOrCreateGame, leaveRoom, changeTeam, startGame } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  join_room: ({ room, name }) => void
+  join_room: (payload: { room: string; name: string }) => void
   key_press: (key: string) => void
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  change_team: ({ room, name }) => void
+  change_team: (payload: { room: string; name: string }) => void
+  start_game: (payload: { room: string; name: string }) => void
 }
 
 interface ServerToClientEvents {
   receive_message: (message: string) => void
   room_update: (Player: string[], Spectator: string[]) => void
+  game_status: (started: boolean) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -52,6 +50,10 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('change_team', ({ room, name }) => {
       changeTeam(room, name, socket)
+    })
+
+    socket.on('start_game', ({ room, name }) => {
+      startGame(room, name, socket)
     })
   })
 
