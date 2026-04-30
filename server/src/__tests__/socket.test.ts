@@ -3,9 +3,9 @@ import type { Server } from 'socket.io'
 import { io as Client, type Socket as ClientSocket } from 'socket.io-client'
 import { createServer } from 'http'
 import { initSocket } from '../socket.ts'
+import type { AddressInfo } from 'node:net'
 
 import * as gamesManager from '../../assets/gamesManager.ts'
-import type { AddressInfo } from 'node:net'
 
 vi.mock('../../assets/gamesManager', () => ({
   joinOrCreateGame: vi.fn(),

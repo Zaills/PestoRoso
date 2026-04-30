@@ -1,4 +1,4 @@
-import { DefaultEventsMap, Socket } from 'socket.io'
+import type { DefaultEventsMap, Socket } from 'socket.io'
 
 const games = new Map()
 
@@ -17,23 +17,34 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
 
 function updateGameRoom(room: string) {
   const gameRoom = games.get(room)!
-  const playerList = []
-  const spectatorList = []
+  const playerList: string[] = []
+  const spectatorList: string[] = []
 
-  gameRoom.players.forEach((player) => {
+  gameRoom.players.forEach((player: { name: string } | undefined) => {
     if (player !== undefined) playerList.push(player.name)
   })
-  gameRoom.spectators.forEach((player) => {
+  gameRoom.spectators.forEach((player: { name: string } | undefined) => {
     if (player !== undefined) spectatorList.push(player.name)
   })
 
-
-  gameRoom.players.forEach((player) => {
-    if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
-  })
-  gameRoom.spectators.forEach((player) => {
-    if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
-  })
+  gameRoom.players.forEach(
+    (
+      player:
+        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } }
+        | undefined,
+    ) => {
+      if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
+    },
+  )
+  gameRoom.spectators.forEach(
+    (
+      player:
+        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } }
+        | undefined,
+    ) => {
+      if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
+    },
+  )
 }
 
 function createRoom(room: string, player: player) {
@@ -50,7 +61,7 @@ function joinRoom(room: string, player: player) {
 }
 
 export function leaveRoom(socket: Socket) {
-  const toDelete = []
+  const toDelete: any[] = []
   games.forEach((game, key) => {
     game.players = game.players.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
@@ -84,7 +95,6 @@ export function changeTeam(room: string, name: string, socket: Socket) {
     gameRoom.players = gameRoom.players.filter(
       (player: { socket: Socket }) => player.socket !== socket,
     )
-
   } else {
     const player = gameRoom.spectators.find((player: { name: string }) => player.name === name)
     if (player !== undefined) {

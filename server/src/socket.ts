@@ -4,8 +4,12 @@ import { joinOrCreateGame, leaveRoom, changeTeam } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   join_room: ({ room, name }) => void
   key_press: (key: string) => void
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   change_team: ({ room, name }) => void
 }
 
