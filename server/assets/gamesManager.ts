@@ -106,14 +106,16 @@ export function startGame(room: string, name: string, socket: Socket) {
 export function changeTeam(room: string, name: string, socket: Socket) {
   if (!games.has(room) && name != null) return
   const gameRoom = games.get(room)!
-  const player = gameRoom.players.find((player: { name: string }) => player.name === name)
+  const player = gameRoom.players.find((player: { socket: Socket }) => player.socket === socket)
   if (player !== undefined) {
     gameRoom.spectators.push(player)
     gameRoom.players = gameRoom.players.filter(
       (player: { socket: Socket }) => player.socket !== socket,
     )
   } else {
-    const player = gameRoom.spectators.find((player: { name: string }) => player.name === name)
+    const player = gameRoom.spectators.find(
+      (player: { socket: Socket }) => player.socket === socket,
+    )
     if (player !== undefined) {
       gameRoom.players.push(player)
       gameRoom.spectators = gameRoom.spectators.filter(
