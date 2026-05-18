@@ -1,0 +1,28 @@
+import * as express from 'express';
+import { Request, Response } from 'express'
+import { createServer } from "http"
+import * as cors from 'cors';
+import { initSocket } from './socket';
+
+const app = express()
+
+app.use(cors())
+app.use(express.json())
+
+const httpServer = createServer(app)
+initSocket(httpServer)
+
+
+const PORT = process.env.PORT || 3000;
+
+app.get('/api/status', (req: Request, res: Response) => {
+  res.json({ status: 'API is running' })
+})
+
+app.get('/marco', (req: Request, res: Response) => {
+  res.send('polo')
+})
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server Started: http://localhost:${PORT}`)
+})

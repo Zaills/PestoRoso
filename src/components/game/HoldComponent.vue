@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PieceComponent from '@/components/PieceComponent.vue'
+import PieceComponent from '@/components/game/PieceComponent.vue'
 import { ref } from 'vue'
 
 const piece = ref('N')
@@ -23,7 +23,7 @@ defineProps<{
     :type="piece"
     :cellSize="cellSize"
     :x="2.5"
-    :y="3.9"
+    :y="2.9"
     :r="0"
   />
   <piece-component

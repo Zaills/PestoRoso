@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
-import PieceComponent from '@/components/PieceComponent.vue'
-import GroundHandler from '@/components/GroundHandler.vue'
-import NextPiecesHandler from '@/components/NextPiecesHandler.vue'
-import HoldComponent from '@/components/HoldComponent.vue'
+import PieceComponent from '@/components/game/PieceComponent.vue'
+import GroundHandler from '@/components/game/GroundHandler.vue'
+import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
+import HoldComponent from '@/components/game/HoldComponent.vue'
+import InputHandler from '@/components/game/InputHandler.vue'
 
 const cellSize = ref(22)
 const height = ref(19)
@@ -45,6 +46,7 @@ function randomType(): string {
   <button @click="nextClicked">New Pieces</button>
   <button @click="holdClicked">Hold Piece</button>
   <button @click="groundClicked">Add Ground</button>
+  <input-handler/>
   <div class="player">
     <div :style="{ height: cellSize * 4 + 'px', width: cellSize * 5 + 'px' }" class="holdPieces">
       <div class="HOLD">HOLD</div>
@@ -60,12 +62,7 @@ function randomType(): string {
         :y="cell.y"
         :r="cell.r"
       />
-      <ground-handler
-        :height="height"
-        :width="width"
-        :cell-size="cellSize"
-        ref="groundChild"
-      />
+      <ground-handler :height="height" :width="width" :cell-size="cellSize" ref="groundChild" />
     </div>
     <div
       :style="{ height: cellSize * (5 * 3 + 1) + 'px', width: cellSize * 5 + 'px' }"
