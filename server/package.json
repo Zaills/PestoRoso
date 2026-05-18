@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev-Server": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev-Server": "ts-node-dev --respawn --transpile-only --compiler-options '{\"esModuleInterop\":true}' src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.2",
+    "supertest": "^7.2.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.2"
   }

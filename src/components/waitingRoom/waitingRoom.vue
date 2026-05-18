@@ -7,12 +7,17 @@ defineProps<{
   ViewerList: string[]
 }>()
 
+const url = window.location.href
+const length = url.split('/').length
+const name = url.split('/')[length - 1]
+const room = url.split('/')[length - 2]
+
 function changeTeam() {
-  const url = window.location.href
-  const length = url.split('/').length
-  const room = url.split('/')[length - 2]
-  const name = url.split('/')[length - 1]
   socket.emit('change_team', { room: room, name: name })
+}
+
+function startGame() {
+  socket.emit('start_game', { room: room, name: name })
 }
 </script>
 
@@ -35,7 +40,7 @@ function changeTeam() {
       </div>
     </div>
   </div>
-  <button>Start Game</button>
+  <button v-if="name === playerList[0]" @click="startGame()">Start Game</button>
   <button @click="changeTeam()">Change Team</button>
 </template>
 

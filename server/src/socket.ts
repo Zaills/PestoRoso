@@ -1,27 +1,29 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
-import { joinOrCreateGame, leaveRoom, changeTeam } from '../assets/gamesManager'
+import { joinOrCreateGame, leaveRoom, changeTeam, startGame } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
-  join_room: ({ room, name }) => void
+  join_room: (payload: { room: string; name: string }) => void
   key_press: (key: string) => void
-  change_team: ({room, name}) => void
+  change_team: (payload: { room: string; name: string }) => void
+  start_game: (payload: { room: string; name: string }) => void
 }
 
 interface ServerToClientEvents {
   receive_message: (message: string) => void
   room_update: (Player: string[], Spectator: string[]) => void
+  game_status: (started: boolean) => void
 }
 
-export let io: Server<ClientToServerEvents, ServerToClientEvents>;
+export let io: Server<ClientToServerEvents, ServerToClientEvents>
 
 export const initSocket = (httpServer: HttpServer) => {
   io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
       origin: 'http://localhost:5173',
       methods: ['GET', 'POST'],
-    }
+    },
   })
 
   io.on('connection', (socket) => {
@@ -46,11 +48,14 @@ export const initSocket = (httpServer: HttpServer) => {
       joinOrCreateGame(room, name, socket)
     })
 
-    socket.on('change_team', ({room, name}) => {
+    socket.on('change_team', ({ room, name }) => {
       changeTeam(room, name, socket)
     })
 
+    socket.on('start_game', ({ room, name }) => {
+      startGame(room, name, socket)
+    })
   })
 
-  return io;
-};
+  return io
+}

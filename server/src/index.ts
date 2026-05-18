@@ -1,7 +1,7 @@
-import * as express from 'express';
-import { Request, Response } from 'express'
+import express from 'express'
+import type { Request, Response } from 'express'
 import { createServer } from "http"
-import * as cors from 'cors';
+import cors from 'cors'
 import { initSocket } from './socket';
 
 const app = express()
@@ -17,10 +17,6 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/api/status', (req: Request, res: Response) => {
   res.json({ status: 'API is running' })
-})
-
-app.get('/marco', (req: Request, res: Response) => {
-  res.send('polo')
 })
 
 httpServer.listen(PORT, () => {

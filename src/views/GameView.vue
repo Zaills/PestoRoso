@@ -2,26 +2,17 @@
 import PlayerHandler from '@/components/game/PlayerHandler.vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { socket } from '@/socket.ts'
-import router from '@/router'
 
 const playerList = ref([])
 const spectatorList = ref([])
 
 onMounted(() => {
-  if (socket.connected) return
   socket.connect()
   const url = window.location.href
   const length = url.split('/').length
-  if (length !== 5) {
-    router.push('home')
-    return
-  }
+
   const room = url.split('/')[length - 2]
   const name = url.split('/')[length - 1]
-  if (name === '' || room == 'roomId') {
-    router.push('home')
-    return
-  }
   socket.emit('join_room', { room: room, name: name })
 })
 
@@ -30,15 +21,15 @@ socket.on('room_update', (players, spectators) => {
   spectatorList.value = spectators
 })
 
+
 onUnmounted(() => {
   socket.disconnect()
 })
-
 </script>
 
 <template>
   <div class="game">
-    <PlayerHandler :playerList="playerList" :ViewerList="spectatorList"/>
+    <PlayerHandler :playerList="playerList" :ViewerList="spectatorList" />
   </div>
 </template>
 
