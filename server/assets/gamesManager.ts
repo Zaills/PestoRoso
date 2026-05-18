@@ -61,8 +61,8 @@ function joinRoom(room: string, player: player) {
 }
 
 export function leaveRoom(socket: Socket) {
-  const toDelete: any[] = []
-  games.forEach((game, key) => {
+  const toDelete: string[] = []
+  games.forEach((game, key: string) => {
     game.players = game.players.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
         players.socket !== socket,
