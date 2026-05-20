@@ -1,6 +1,6 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
-import { joinOrCreateGame, leaveRoom, changeTeam, startGame } from '../assets/gamesManager'
+import { joinOrCreateGame, leaveRoom, changeTeam, startGame, handleKeyPress } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
@@ -14,6 +14,7 @@ interface ServerToClientEvents {
   receive_message: (message: string) => void
   room_update: (Player: string[], Spectator: string[]) => void
   game_status: (started: boolean) => void
+  game_update: (gameData: any) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -41,7 +42,7 @@ export const initSocket = (httpServer: HttpServer) => {
     })
 
     socket.on('key_press', (key) => {
-      socket.emit('receive_message', `Valid Key pressed: ${key}`)
+      handleKeyPress(socket, key)
     })
 
     socket.on('join_room', ({ room, name }) => {
