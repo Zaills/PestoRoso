@@ -4,7 +4,6 @@ import { mount } from '@vue/test-utils'
 // @ts-expect-error
 import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 
-
 describe('NextPieces', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -13,23 +12,31 @@ describe('NextPieces', () => {
   const stubs = {
     BlockRenderer: true,
   }
-  const cellSize= 20
+  const cellSize = 20
 
-  it('shifts pieces', async () => {
+  it('renders pieces from pieceIds prop', () => {
+    // IDs: 3=L, 6=T, 5=S, 1=I, 7=Z
     const wrapper = mount(NextPiecesHandler, {
-      props: { cellSize },
+      props: { cellSize, pieceIds: [3, 6, 5, 1, 7] },
       global: { stubs },
     })
 
-    wrapper.vm.newPieces('Z')
-    await wrapper.vm.$nextTick()
-
     const pieces = wrapper.findAllComponents({ name: 'PieceComponent' })
-
     expect(pieces[0].props('type')).toBe('L')
     expect(pieces[4].props('type')).toBe('Z')
-
     // y = 2 + (index 4 * 3) = 14
     expect(pieces[4].props('y')).toBe(14)
+  })
+
+  it('updates when pieceIds prop changes', async () => {
+    const wrapper = mount(NextPiecesHandler, {
+      props: { cellSize, pieceIds: [1, 2, 3, 4, 5] },
+      global: { stubs },
+    })
+
+    await wrapper.setProps({ pieceIds: [7, 6, 5, 4, 3] })
+    const pieces = wrapper.findAllComponents({ name: 'PieceComponent' })
+    expect(pieces[0].props('type')).toBe('Z')
+    expect(pieces[4].props('type')).toBe('L')
   })
 })

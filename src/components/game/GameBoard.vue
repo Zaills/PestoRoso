@@ -1,86 +1,188 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
-import PieceComponent from '@/components/game/PieceComponent.vue'
-import GroundHandler from '@/components/game/GroundHandler.vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 import HoldComponent from '@/components/game/HoldComponent.vue'
 import InputHandler from '@/components/game/InputHandler.vue'
+import { socket } from '@/socket'
+import { PIECE_NAMES, type PieceName } from '@/game/tetrisEngine'
+import { useGameState } from '@/game/useGameState'
 
-const cellSize = ref(22)
-const height = ref(19)
-const width = ref(10)
+const CELL_SIZE = 22
+const VISIBLE_ROWS = 20
+const BUFFER_ROWS = 2
+const COLS = 10
 
-const nextRef = useTemplateRef('nextChild')
+const {
+  board,
+  currentPiece,
+  ghostPieceY,
+  heldPieceName,
+  nextPieceIds,
+  score,
+  level,
+  linesCount,
+  isGameOver,
+  initGame,
+  addPieces,
+  moveLeft,
+  moveRight,
+  softDrop,
+  rotate,
+  hardDrop,
+  hold,
+} = useGameState()
 
-function nextClicked() {
-  nextRef.value.newPieces(randomType())
+function onPiecesBatch(pieces: number[]) {
+  initGame(pieces)
 }
 
-const holdRef = useTemplateRef('holdChild')
-
-function holdClicked() {
-  holdRef.value.addHold(randomType())
+function onMorePieces(pieces: number[]) {
+  addPieces(pieces)
 }
 
-const groundRef = useTemplateRef('groundChild')
+onMounted(() => {
+  socket.on('pieces_batch', onPiecesBatch)
+  socket.on('more_pieces', onMorePieces)
+})
 
-function groundClicked() {
-  groundRef.value.addGround(1)
+onUnmounted(() => {
+  socket.off('pieces_batch', onPiecesBatch)
+  socket.off('more_pieces', onMorePieces)
+})
+
+interface Cell {
+  x: number
+  y: number
+  type: PieceName
 }
 
-let id = 0
-const nextCells = ref([
-  { id: id++, type: 'O', x: 0.5, y: 0.5, r: 0 },
-  { id: id++, type: 'L', x: 5, y: 5, r: 1 },
-  { id: id++, type: 'T', x: 2, y: 10, r: 2 },
-  { id: id++, type: 'I', x: 6, y: 13, r: 1 },
-])
+const boardCells = computed<Cell[]>(() => {
+  const cells: Cell[] = []
+  for (let row = BUFFER_ROWS; row < 22; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const val = board.value[row][col]
+      if (val !== 0) {
+        cells.push({ x: col, y: row - BUFFER_ROWS, type: PIECE_NAMES[val] })
+      }
+    }
+  }
+  return cells
+})
 
-function randomType(): string {
-  const types = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
-  return types[Math.floor(Math.random() * types.length)]
-}
+const currentPieceCells = computed<Cell[]>(() => {
+  if (!currentPiece.value) return []
+  const p = currentPiece.value
+  const type = PIECE_NAMES[p.pieceId]
+  const cells: Cell[] = []
+  for (let r = 0; r < p.matrix.length; r++) {
+    for (let c = 0; c < p.matrix[r].length; c++) {
+      if (p.matrix[r][c] !== 0) {
+        const displayY = p.y + r - BUFFER_ROWS
+        if (displayY >= 0) {
+          cells.push({ x: p.x + c, y: displayY, type })
+        }
+      }
+    }
+  }
+  return cells
+})
+
+const ghostCells = computed<Cell[]>(() => {
+  if (!currentPiece.value) return []
+  const p = currentPiece.value
+  const gy = ghostPieceY.value
+  if (gy === p.y) return []
+  const type = PIECE_NAMES[p.pieceId]
+  const cells: Cell[] = []
+  for (let r = 0; r < p.matrix.length; r++) {
+    for (let c = 0; c < p.matrix[r].length; c++) {
+      if (p.matrix[r][c] !== 0) {
+        const displayY = gy + r - BUFFER_ROWS
+        if (displayY >= 0) {
+          cells.push({ x: p.x + c, y: displayY, type })
+        }
+      }
+    }
+  }
+  return cells
+})
 </script>
 
 <template>
-  <button @click="nextClicked">New Pieces</button>
-  <button @click="holdClicked">Hold Piece</button>
-  <button @click="groundClicked">Add Ground</button>
-  <input-handler/>
-  <div class="player">
-    <div :style="{ height: cellSize * 4 + 'px', width: cellSize * 5 + 'px' }" class="holdPieces">
-      <div class="HOLD">HOLD</div>
-      <hold-component :cell-size="cellSize" ref="holdChild" />
+  <div class="player-board">
+    <div
+      :style="{ height: CELL_SIZE * 4 + 'px', width: CELL_SIZE * 5 + 'px' }"
+      class="hold-area"
+    >
+      <div class="label">HOLD</div>
+      <HoldComponent :cell-size="CELL_SIZE" :piece-name="heldPieceName" />
     </div>
-    <div :style="{ height: cellSize * height + 'px', width: cellSize * width + 'px' }" class="game">
-      <piece-component
-        v-for="cell in nextCells"
-        :key="cell.id"
+
+    <div
+      :style="{ height: CELL_SIZE * VISIBLE_ROWS + 'px', width: CELL_SIZE * COLS + 'px' }"
+      class="game-area"
+    >
+      <BlockRenderer
+        v-for="(cell, i) in boardCells"
+        :key="`b-${i}`"
         :type="cell.type"
-        :cellSize="cellSize"
+        :cell-size="CELL_SIZE"
         :x="cell.x"
         :y="cell.y"
-        :r="cell.r"
       />
-      <ground-handler :height="height" :width="width" :cell-size="cellSize" ref="groundChild" />
+      <BlockRenderer
+        v-for="(cell, i) in ghostCells"
+        :key="`g-${i}`"
+        :type="cell.type"
+        :cell-size="CELL_SIZE"
+        :x="cell.x"
+        :y="cell.y"
+        :ghost="true"
+      />
+      <BlockRenderer
+        v-for="(cell, i) in currentPieceCells"
+        :key="`p-${i}`"
+        :type="cell.type"
+        :cell-size="CELL_SIZE"
+        :x="cell.x"
+        :y="cell.y"
+      />
+      <div v-if="isGameOver" class="game-over">GAME OVER</div>
     </div>
+
     <div
-      :style="{ height: cellSize * (5 * 3 + 1) + 'px', width: cellSize * 5 + 'px' }"
-      class="nextPieces"
+      :style="{ height: CELL_SIZE * (5 * 3 + 1) + 'px', width: CELL_SIZE * 5 + 'px' }"
+      class="next-area"
     >
-      <div class="NEXT">NEXT</div>
-      <next-pieces-handler :cellSize="cellSize" ref="nextChild" />
+      <div class="label">NEXT</div>
+      <NextPiecesHandler :cell-size="CELL_SIZE" :piece-ids="nextPieceIds" />
     </div>
+
+    <InputHandler
+      :on-left="moveLeft"
+      :on-right="moveRight"
+      :on-down="softDrop"
+      :on-rotate="rotate"
+      :on-hard-drop="hardDrop"
+      :on-hold="hold"
+    />
+  </div>
+
+  <div class="score-panel">
+    <span>Score: {{ score }}</span>
+    <span>Level: {{ level }}</span>
+    <span>Lines: {{ linesCount }}</span>
   </div>
 </template>
 
 <style scoped>
-.player {
+.player-board {
   white-space: nowrap;
   display: inline-block;
 }
 
-.player > * {
+.player-board > div {
   display: inline-block;
   vertical-align: top;
   background-color: rgb(0 0 0 / 0.67);
@@ -90,34 +192,46 @@ function randomType(): string {
   border-top-width: 0;
 }
 
-.game {
+.game-area {
   border-bottom-left-radius: 10px;
-  corner-bottom-left-shape: bevel;
   border-bottom-right-radius: 10px;
-  corner-bottom-right-shape: bevel;
 }
 
-.holdPieces {
+.hold-area {
   border-right-width: 0;
   border-bottom-left-radius: 20px;
-  corner-bottom-left-shape: bevel;
 }
 
-.HOLD {
-  text-align: right;
-  color: black;
-  background-color: white;
-}
-
-.nextPieces {
+.next-area {
   border-left-width: 0;
   border-bottom-right-radius: 20px;
-  corner-bottom-right-shape: bevel;
 }
 
-.NEXT {
+.label {
   text-align: right;
   color: black;
   background-color: white;
+}
+
+.game-over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.7);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.score-panel {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  color: white;
+  padding: 8px;
+  font-size: 14px;
 }
 </style>

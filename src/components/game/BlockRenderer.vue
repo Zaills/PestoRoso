@@ -4,13 +4,14 @@ defineProps<{
   cellSize: number
   x: number
   y: number
+  ghost?: boolean
 }>()
 
 </script>
 
 <template>
   <div
-    :class="['cell', type]"
+    :class="['cell', type, { ghost }]"
     :style="{
       height: cellSize + 'px',
       width: cellSize + 'px',
@@ -50,5 +51,9 @@ defineProps<{
 
 .cell.empty {
   background-color: dimgrey;
+}
+
+.cell.ghost {
+  opacity: 0.25;
 }
 </style>

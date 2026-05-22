@@ -1,40 +1,36 @@
 <script setup lang="ts">
 import PieceComponent from '@/components/game/PieceComponent.vue'
-import { ref } from 'vue'
+import type { PieceName } from '@/game/tetrisEngine'
 
-const piece = ref('N')
-
-function addHold(type: string) {
-  piece.value = type
-}
-
-defineExpose({
-  addHold,
-})
-
-defineProps<{
+const props = defineProps<{
   cellSize: number
+  pieceName: PieceName | null
 }>()
 </script>
 
 <template>
   <piece-component
-    v-if="piece === 'I'"
-    :type="piece"
-    :cellSize="cellSize"
+    v-if="props.pieceName === 'I'"
+    :type="props.pieceName"
+    :cellSize="props.cellSize"
     :x="2.5"
     :y="2.9"
     :r="0"
   />
   <piece-component
-    v-else-if="piece === 'O'"
-    :type="piece"
-    :cellSize="cellSize"
+    v-else-if="props.pieceName === 'O'"
+    :type="props.pieceName"
+    :cellSize="props.cellSize"
     :x="2.5"
     :y="2.5"
     :r="0"
   />
-  <piece-component v-else :type="piece" :cellSize="cellSize" :x="2" :y="2.5" :r="0" />
+  <piece-component
+    v-else-if="props.pieceName !== null"
+    :type="props.pieceName"
+    :cellSize="props.cellSize"
+    :x="2"
+    :y="2.5"
+    :r="0"
+  />
 </template>
-
-<style scoped></style>

@@ -1,5 +1,4 @@
 import type { DefaultEventsMap, Socket } from 'socket.io'
-import { spawnPiece, checkCollision, rotateMatrix, type PieceState } from './tetrisEngine'
 const games = new Map()
 
 interface player {
@@ -8,8 +7,6 @@ interface player {
   board: number[][]
   score: number
   isGameOver: boolean
-  currentPiece: PieceState | null
-  pieceIndex: number
 }
 
 export function createEmptyBoard(): number[][] {
@@ -17,10 +14,15 @@ export function createEmptyBoard(): number[][] {
 }
 
 export function joinOrCreateGame(room: string, name: string, socket: Socket) {
-  const player: player = { name, socket, board: createEmptyBoard(), score: 0, isGameOver: false, currentPiece: null, pieceIndex: 0 }
+  const player: player = {
+    name,
+    socket,
+    board: createEmptyBoard(),
+    score: 0,
+    isGameOver: false,
+  }
   if (games.has(room)) joinRoom(room, player)
   else createRoom(room, player)
-
   updateGameRoom(room)
 }
 
@@ -92,8 +94,8 @@ export function leaveRoom(socket: Socket) {
 export function generateRandomBag(): number[] {
   const pieces = [1, 2, 3, 4, 5, 6, 7]
   for (let i = pieces.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pieces[i], pieces[j]] = [pieces[j], pieces[i]]
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pieces[i], pieces[j]] = [pieces[j], pieces[i]]
   }
   return pieces
 }
@@ -107,103 +109,60 @@ export function getBags(numBags: number = 5): number[] {
 }
 
 export function startGame(room: string, name: string, socket: Socket) {
-  if (games.has(room) && games.get(room).players[0].name == name && games.get(room).players[0].socket == socket) {
-    const gameRoom = games.get(room)
-    gameRoom.started = true
-    
-    // Generate initial pieces
-    gameRoom.pieces = getBags(10) // 70 pieces pour commencer
-
-    gameRoom.players.forEach((p: player) => {
-      if (p) {
-        p.currentPiece = spawnPiece(gameRoom.pieces[0])
-        p.pieceIndex = 1
-      }
-    })
-
-    gameRoom.players.forEach(
-      (
-        player:
-          | { socket: { emit: (arg0: string, arg1: boolean) => void } }
-          | undefined,
-      ) => {
-        if (player !== undefined) player.socket.emit('game_status', true)
-      },
-    )
-    gameRoom.spectators.forEach(
-      (player: { socket: { emit: (arg0: string, arg1: boolean) => void } } | undefined) => {
-        if (player !== undefined) player.socket.emit('game_status', true)
-      },
-    )
-    broadcastGameState(room)
-  }
-}
-
-export function broadcastGameState(room: string) {
   const gameRoom = games.get(room)
-  if (!gameRoom || !gameRoom.started) return
+  if (!gameRoom) return
+  if (gameRoom.players[0].name !== name || gameRoom.players[0].socket !== socket) return
 
-  const gameData = gameRoom.players.map((p: player) => ({
-    name: p.name,
-    board: p.board,
-    currentPiece: p.currentPiece,
-    score: p.score,
-    isGameOver: p.isGameOver
-  }))
+  gameRoom.started = true
+  gameRoom.pieces = getBags(10)
 
   const broadcastTo = (p: any) => {
-    if (p && p.socket) p.socket.emit('game_update', gameData)
+    if (p?.socket) {
+      p.socket.emit('game_status', true)
+      p.socket.emit('pieces_batch', gameRoom.pieces)
+    }
   }
   gameRoom.players.forEach(broadcastTo)
   gameRoom.spectators.forEach(broadcastTo)
 }
 
-export function handleKeyPress(socket: Socket, key: string) {
-  let foundRoom: string | null = null
-  let foundPlayer: player | null = null
-
+export function handleBoardUpdate(
+  socket: Socket,
+  data: { board: number[][]; score: number; isGameOver: boolean },
+) {
   for (const [roomName, gameRoom] of games.entries()) {
-    if (gameRoom.started) {
-      const p = gameRoom.players.find((p: player) => p.socket === socket)
-      if (p) {
-        foundRoom = roomName
-        foundPlayer = p
-        break
-      }
+    if (!gameRoom.started) continue
+    const player = gameRoom.players.find((p: player) => p.socket === socket)
+    if (!player) continue
+
+    player.board = data.board
+    player.score = data.score
+    player.isGameOver = data.isGameOver
+
+    const gameData = gameRoom.players.map((p: player) => ({
+      name: p.name,
+      board: p.board,
+      score: p.score,
+      isGameOver: p.isGameOver,
+    }))
+
+    const broadcastTo = (p: any) => {
+      if (p?.socket) p.socket.emit('game_update', gameData)
     }
+    gameRoom.players.forEach(broadcastTo)
+    gameRoom.spectators.forEach(broadcastTo)
+    break
   }
+}
 
-  if (!foundRoom || !foundPlayer || foundPlayer.isGameOver || !foundPlayer.currentPiece) return
-
-  let moved = false
-  const p = foundPlayer
-  const piece = p.currentPiece!
-
-  if (key === 'ArrowLeft' && !checkCollision(p.board, piece, -1, 0)) {
-    piece.x -= 1
-    moved = true
-  } else if (key === 'ArrowRight' && !checkCollision(p.board, piece, 1, 0)) {
-    piece.x += 1
-    moved = true
-  } else if (key === 'ArrowDown' && !checkCollision(p.board, piece, 0, 1)) {
-    piece.y += 1
-    moved = true
-  } else if (key === 'ArrowUp') {
-    const rotated = rotateMatrix(piece.matrix)
-    if (!checkCollision(p.board, piece, 0, 0, rotated)) {
-      piece.matrix = rotated
-      moved = true
-    }
-  } else if (key === ' ') { // Space for hard drop
-    while (!checkCollision(p.board, piece, 0, 1)) {
-      piece.y += 1
-    }
-    moved = true
-    // Le verrouillage (lock) sera géré plus tard
-  }
-
-  if (moved) {
-    broadcastGameState(foundRoom)
+export function handleMorePiecesRequest(socket: Socket) {
+  for (const [, gameRoom] of games.entries()) {
+    if (!gameRoom.started) continue
+    const player = gameRoom.players.find((p: player) => p.socket === socket)
+    if (!player) continue
+    const newPieces = getBags(5)
+    socket.emit('more_pieces', newPieces)
+    break
   }
 }
 
