@@ -11,6 +11,7 @@ import { useGameState } from '@/game/useGameState'
 const CELL_SIZE = 22
 const VISIBLE_ROWS = 20
 const BUFFER_ROWS = 2
+const TOTAL_ROWS = VISIBLE_ROWS + BUFFER_ROWS
 const COLS = 10
 
 const {
@@ -59,11 +60,11 @@ interface Cell {
 
 const boardCells = computed<Cell[]>(() => {
   const cells: Cell[] = []
-  for (let row = BUFFER_ROWS; row < 22; row++) {
+  for (let row = 0; row < TOTAL_ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const val = board.value[row][col]
       if (val !== 0) {
-        cells.push({ x: col, y: row - BUFFER_ROWS, type: PIECE_NAMES[val] })
+        cells.push({ x: col, y: row, type: PIECE_NAMES[val] })
       }
     }
   }
@@ -78,10 +79,7 @@ const currentPieceCells = computed<Cell[]>(() => {
   for (let r = 0; r < p.matrix.length; r++) {
     for (let c = 0; c < p.matrix[r].length; c++) {
       if (p.matrix[r][c] !== 0) {
-        const displayY = p.y + r - BUFFER_ROWS
-        if (displayY >= 0) {
-          cells.push({ x: p.x + c, y: displayY, type })
-        }
+        cells.push({ x: p.x + c, y: p.y + r, type })
       }
     }
   }
@@ -98,10 +96,7 @@ const ghostCells = computed<Cell[]>(() => {
   for (let r = 0; r < p.matrix.length; r++) {
     for (let c = 0; c < p.matrix[r].length; c++) {
       if (p.matrix[r][c] !== 0) {
-        const displayY = gy + r - BUFFER_ROWS
-        if (displayY >= 0) {
-          cells.push({ x: p.x + c, y: displayY, type })
-        }
+        cells.push({ x: p.x + c, y: gy + r, type })
       }
     }
   }
@@ -111,16 +106,17 @@ const ghostCells = computed<Cell[]>(() => {
 
 <template>
   <div class="player-board">
-    <div
-      :style="{ height: CELL_SIZE * 4 + 'px', width: CELL_SIZE * 5 + 'px' }"
-      class="hold-area"
-    >
+    <div :style="{ height: CELL_SIZE * 4 + 'px', width: CELL_SIZE * 5 + 'px' }" class="hold-area">
       <div class="label">HOLD</div>
       <HoldComponent :cell-size="CELL_SIZE" :piece-name="heldPieceName" />
     </div>
 
     <div
-      :style="{ height: CELL_SIZE * VISIBLE_ROWS + 'px', width: CELL_SIZE * COLS + 'px' }"
+      :style="{
+        height: CELL_SIZE * VISIBLE_ROWS + 'px',
+        width: CELL_SIZE * COLS + 'px',
+        '--cell-size': CELL_SIZE + 'px',
+      }"
       class="game-area"
     >
       <BlockRenderer
@@ -129,7 +125,7 @@ const ghostCells = computed<Cell[]>(() => {
         :type="cell.type"
         :cell-size="CELL_SIZE"
         :x="cell.x"
-        :y="cell.y"
+        :y="cell.y - BUFFER_ROWS"
       />
       <BlockRenderer
         v-for="(cell, i) in ghostCells"
@@ -137,7 +133,7 @@ const ghostCells = computed<Cell[]>(() => {
         :type="cell.type"
         :cell-size="CELL_SIZE"
         :x="cell.x"
-        :y="cell.y"
+        :y="cell.y - BUFFER_ROWS"
         :ghost="true"
       />
       <BlockRenderer
@@ -146,8 +142,9 @@ const ghostCells = computed<Cell[]>(() => {
         :type="cell.type"
         :cell-size="CELL_SIZE"
         :x="cell.x"
-        :y="cell.y"
+        :y="cell.y - BUFFER_ROWS"
       />
+
       <div v-if="isGameOver" class="game-over">GAME OVER</div>
     </div>
 
@@ -187,7 +184,7 @@ const ghostCells = computed<Cell[]>(() => {
   vertical-align: top;
   background-color: rgb(0 0 0 / 0.67);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: solid 10px white;
   border-top-width: 0;
 }
@@ -195,6 +192,20 @@ const ghostCells = computed<Cell[]>(() => {
 .game-area {
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: var(--cell-size) var(--cell-size);
+}
+
+.buffer-separator {
+  position: absolute;
+  top: var(--buffer-height);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
 }
 
 .hold-area {
