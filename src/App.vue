@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
 import AppBackground from '@/components/AppBackgroud.vue'
+import TitleComponent from '@/components/Home/TitleComponent.vue'
 </script>
 
 <template>
   <header>
     <AppBackground />
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
+    <TitleComponent />
   </header>
 
   <RouterView />
@@ -21,6 +16,7 @@ import AppBackground from '@/components/AppBackgroud.vue'
 header {
   line-height: 1.5;
   max-height: 100vh;
+  text-align: center;
 }
 
 nav {

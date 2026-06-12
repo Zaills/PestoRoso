@@ -5,14 +5,13 @@ import ConnectionComponent from '@/components/Home/ConnectionComponent.vue'
 
 <template>
   <main>
-    <title-component />
     <connection-component />
   </main>
 </template>
 
 <style scoped>
 main {
-  width: 100px;
+  width: 500px;
   height: 100px;
   position: absolute;
   top: 0;

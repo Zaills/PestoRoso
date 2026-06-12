@@ -28,7 +28,7 @@ defineProps<{
 .player-handler {
   display: flex;
   flex-direction: column;
-  width: 33%;
+  width: 30%;
   align-content: center;
   justify-content: center;
 }
