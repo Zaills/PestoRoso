@@ -9,7 +9,7 @@
 .title {
   font-family: 'Titan One', sans-serif;
   color: #ff0059;
-  font-size: 7rem;
+  font-size: 1rem;
   text-align: center;
   margin-bottom: 2rem;
 }

@@ -7,6 +7,7 @@ interface player {
   board: number[][]
   score: number
   isGameOver: boolean
+  room: string
 }
 
 export function createEmptyBoard(): number[][] {
@@ -20,6 +21,7 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
     board: createEmptyBoard(),
     score: 0,
     isGameOver: false,
+    room: room,
   }
   if (games.has(room)) joinRoom(room, player)
   else createRoom(room, player)
@@ -87,6 +89,7 @@ export function leaveRoom(socket: Socket) {
     } else {
       updateGameRoom(key)
     }
+    socket.leave(game.room)
   })
   toDelete.forEach((game) => games.delete(game))
 }
@@ -116,43 +119,31 @@ export function startGame(room: string, name: string, socket: Socket) {
   gameRoom.started = true
   gameRoom.pieces = getBags(10)
 
-  const broadcastTo = (p: any) => {
-    if (p?.socket) {
-      p.socket.emit('game_status', true)
-      p.socket.emit('pieces_batch', gameRoom.pieces)
-    }
-  }
-  gameRoom.players.forEach(broadcastTo)
-  gameRoom.spectators.forEach(broadcastTo)
+  socket.nsp.to(room).emit('game_status', true)
+  socket.nsp.to(room).emit('pieces_batch', gameRoom.pieces)
 }
 
 export function handleBoardUpdate(
   socket: Socket,
   data: { board: number[][]; score: number; isGameOver: boolean },
 ) {
-  for (const [roomName, gameRoom] of games.entries()) {
-    if (!gameRoom.started) continue
-    const player = gameRoom.players.find((p: player) => p.socket === socket)
-    if (!player) continue
+  games.forEach((game) => {
+    if (!game.started) return
+    const player = game.players.find((p: player) => p.socket === socket)
+    if (!player) return
 
     player.board = data.board
     player.score = data.score
     player.isGameOver = data.isGameOver
 
-    const gameData = gameRoom.players.map((p: player) => ({
-      name: p.name,
-      board: p.board,
-      score: p.score,
-      isGameOver: p.isGameOver,
-    }))
-
-    const broadcastTo = (p: any) => {
-      if (p?.socket) p.socket.emit('game_update', gameData)
+    const gameData = {
+      name: player.name,
+      board: player.board,
+      isGameOver: data.isGameOver,
     }
-    gameRoom.players.forEach(broadcastTo)
-    gameRoom.spectators.forEach(broadcastTo)
-    break
-  }
+    socket.broadcast.to(player.room).emit('game_update', gameData)
+    socket.broadcast.to(player.room).emit('receive_message', 'Polo')
+  })
 }
 
 export function handleMorePiecesRequest(socket: Socket) {

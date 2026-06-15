@@ -21,7 +21,6 @@ socket.on('room_update', (players, spectators) => {
   spectatorList.value = spectators
 })
 
-
 onUnmounted(() => {
   socket.disconnect()
 })

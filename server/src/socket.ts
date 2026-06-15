@@ -24,7 +24,7 @@ interface ServerToClientEvents {
   game_status: (started: boolean) => void
   pieces_batch: (pieces: number[]) => void
   more_pieces: (pieces: number[]) => void
-  game_update: (gameData: { name: string; board: number[][]; score: number; isGameOver: boolean }[]) => void
+  game_update: (gameData: { name: string; board: number[][]; isGameOver: boolean }) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -52,6 +52,7 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('join_room', ({ room, name }) => {
       joinOrCreateGame(room, name, socket)
+      socket.join(room)
     })
 
     socket.on('change_team', ({ room, name }) => {
@@ -64,6 +65,8 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('board_update', (data) => {
       handleBoardUpdate(socket, data)
+      // console.log(data.board)
+      // socket.broadcast.emit('receive_message', 'Polo')
     })
 
     socket.on('request_more_pieces', () => {
