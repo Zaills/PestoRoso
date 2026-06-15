@@ -7,6 +7,7 @@ import InputHandler from '@/components/game/InputHandler.vue'
 import { socket } from '@/socket'
 import { PIECE_NAMES, type PieceName } from '@/game/tetrisEngine'
 import { useGameState } from '@/game/useGameState'
+import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
 
 const CELL_SIZE = 22
 const VISIBLE_ROWS = 20
@@ -171,6 +172,7 @@ const ghostCells = computed<Cell[]>(() => {
     <span>Level: {{ level }}</span>
     <span>Lines: {{ linesCount }}</span>
   </div>
+  <SpectrumComponent name="sdf" />
 </template>
 
 <style scoped>
