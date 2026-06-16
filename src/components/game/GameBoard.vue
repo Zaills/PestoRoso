@@ -27,6 +27,7 @@ const {
   isGameOver,
   initGame,
   addPieces,
+  penalityLine,
   moveLeft,
   moveRight,
   softDrop,
@@ -43,14 +44,21 @@ function onMorePieces(pieces: number[]) {
   addPieces(pieces)
 }
 
+function onPenality(lines: number) {
+  console.log('test')
+  penalityLine(lines)
+}
+
 onMounted(() => {
   socket.on('pieces_batch', onPiecesBatch)
   socket.on('more_pieces', onMorePieces)
+  socket.on('get_penality', onPenality)
 })
 
 onUnmounted(() => {
   socket.off('pieces_batch', onPiecesBatch)
   socket.off('more_pieces', onMorePieces)
+  socket.off('get_penality', onPenality)
 })
 
 interface Cell {

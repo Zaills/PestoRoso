@@ -1,3 +1,5 @@
+import { socket } from '@/socket.ts'
+
 export const PIECES: Record<number, number[][]> = {
   1: [
     [0, 0, 0, 0],
@@ -34,9 +36,12 @@ export const PIECES: Record<number, number[][]> = {
     [0, 1, 1],
     [0, 0, 0],
   ],
+  8: [
+    [8]
+  ]
 }
 
-export type PieceName = 'I' | 'J' | 'L' | 'O' | 'S' | 'T' | 'Z'
+export type PieceName = 'I' | 'J' | 'L' | 'O' | 'S' | 'T' | 'Z' | 'penality'
 
 export const PIECE_NAMES: Record<number, PieceName> = {
   1: 'I',
@@ -46,6 +51,7 @@ export const PIECE_NAMES: Record<number, PieceName> = {
   5: 'S',
   6: 'T',
   7: 'Z',
+  8: 'penality',
 }
 
 export interface PieceState {
@@ -118,8 +124,11 @@ export function lockPiece(board: number[][], piece: PieceState): number[][] {
 }
 
 export function clearLines(board: number[][]): { newBoard: number[][]; linesCleared: number } {
-  const kept = board.filter((row) => !row.every((cell) => cell !== 0))
+  const kept = board.filter((row) => !row.every((cell) => (cell !== 0 && cell !== 8)))
   const linesCleared = 22 - kept.length
+  if (linesCleared > 1) {
+    socket.emit('clearLines', linesCleared - 1)
+  }
   const empty = Array.from({ length: linesCleared }, () => Array(10).fill(0))
   return { newBoard: [...empty, ...kept], linesCleared }
 }

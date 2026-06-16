@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  type: 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L' | 'empty'
+  type: 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L' | 'empty' | 'penality'
   cellSize: number
   x: number
   y: number
@@ -54,6 +54,11 @@ defineProps<{
 
 .cell.empty {
   background-color: dimgrey;
+  box-shadow: none;
+}
+
+.cell.penality {
+  background-color: #360d0d;
   box-shadow: none;
 }
 

@@ -51,6 +51,26 @@ export function useGameState() {
     startGravity()
   }
 
+  function penalityLine(lines: number) {
+    if (lines <= 0 || isGameOver.value) return
+
+    for (let i = 0; i < lines; i++) {
+      const remainingBoard = board.value.slice(1)
+
+      const row = new Array(10).fill(8)
+
+      board.value = [...remainingBoard, row]
+      if (currentPiece.value) {
+        while (checkCollision(board.value, currentPiece.value, 0, 0)) {
+          currentPiece.value = {
+            ...currentPiece.value,
+            y: currentPiece.value.y - 1,
+          }
+        }
+      }
+    }
+  }
+
   function spawnNextPiece() {
     if (pieceQueue.value.length < 14) {
       socket.emit('request_more_pieces')
@@ -194,6 +214,7 @@ export function useGameState() {
     isGameOver,
     initGame,
     addPieces,
+    penalityLine,
     moveLeft,
     moveRight,
     softDrop,

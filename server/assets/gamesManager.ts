@@ -142,7 +142,6 @@ export function handleBoardUpdate(
       isGameOver: data.isGameOver,
     }
     socket.broadcast.to(player.room).emit('game_update', gameData)
-    socket.broadcast.to(player.room).emit('receive_message', 'Polo')
   })
 }
 
@@ -180,4 +179,14 @@ export function changeTeam(room: string, name: string, socket: Socket) {
     }
   }
   updateGameRoom(room)
+}
+
+export function sendPenality(lines: number, socket: Socket) {
+  games.forEach((game) => {
+    if (!game.started) return
+    const player = game.players.find((p: player) => p.socket === socket)
+    if (!player) return
+
+    socket.broadcast.to(player.room).emit('get_penality', lines)
+  })
 }

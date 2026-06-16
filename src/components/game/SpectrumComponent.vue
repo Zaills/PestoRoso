@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { createEmptyBoard, PIECE_NAMES, type PieceName } from '@/game/tetrisEngine'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { socket } from '@/socket.ts'
@@ -19,6 +19,10 @@ function onGameUpdate(gameData: { name: string; board: number[][]; isGameOver: b
 
 onMounted(() => {
   socket.on('game_update', onGameUpdate)
+})
+
+onUnmounted(() => {
+  socket.off('game_update', onGameUpdate)
 })
 
 // Valeurs par défaut si non spécifiées

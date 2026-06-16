@@ -7,6 +7,7 @@ import {
   startGame,
   handleBoardUpdate,
   handleMorePiecesRequest,
+  sendPenality,
 } from '../assets/gamesManager'
 
 interface ClientToServerEvents {
@@ -16,6 +17,7 @@ interface ClientToServerEvents {
   start_game: (payload: { room: string; name: string }) => void
   board_update: (data: { board: number[][]; score: number; isGameOver: boolean }) => void
   request_more_pieces: () => void
+  clearLines: (lines: number) => void
 }
 
 interface ServerToClientEvents {
@@ -25,6 +27,7 @@ interface ServerToClientEvents {
   pieces_batch: (pieces: number[]) => void
   more_pieces: (pieces: number[]) => void
   game_update: (gameData: { name: string; board: number[][]; isGameOver: boolean }) => void
+  get_penalty: (lines: number) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -71,6 +74,10 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('request_more_pieces', () => {
       handleMorePiecesRequest(socket)
+    })
+
+    socket.on('clearLines', (lines: number)=> {
+      sendPenality(lines, socket)
     })
   })
 
