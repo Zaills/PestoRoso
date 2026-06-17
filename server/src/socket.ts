@@ -9,6 +9,7 @@ import {
   handleMorePiecesRequest,
   sendPenality,
 } from '../assets/gamesManager'
+import os from 'node:os'
 
 interface ClientToServerEvents {
   send_message: (message: string) => void
@@ -31,11 +32,30 @@ interface ServerToClientEvents {
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
+function getLocalIpAddress() {
+  const interfaces = os.networkInterfaces()
+  for (const interfaceName in interfaces) {
+    const networkInterface = interfaces[interfaceName]
+    if (networkInterface) {
+      for (const net of networkInterface) {
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address
+        }
+      }
+    }
+  }
+  return 'localhost'
+}
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  `http://${getLocalIpAddress()}:5173`,
+]
 
 export const initSocket = (httpServer: HttpServer) => {
   io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
-      origin: 'http://localhost:5173',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
     },
   })
