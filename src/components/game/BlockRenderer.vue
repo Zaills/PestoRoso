@@ -58,7 +58,7 @@ defineProps<{
 }
 
 .cell.penality {
-  background-color: #360d0d;
+  background-color: #6a6a6a;
   box-shadow: none;
 }
 

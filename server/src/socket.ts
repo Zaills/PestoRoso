@@ -27,8 +27,15 @@ interface ServerToClientEvents {
   game_status: (started: boolean) => void
   pieces_batch: (pieces: number[]) => void
   more_pieces: (pieces: number[]) => void
-  game_update: (gameData: { name: string; board: number[][]; isGameOver: boolean }) => void
+  game_update: (gameData: {
+    name: string
+    board: number[][]
+    isGameOver: boolean
+    id: number
+  }) => void
   get_penalty: (lines: number) => void
+  you_join: (id: number) => void
+  all_player: (playerIds: number[]) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>

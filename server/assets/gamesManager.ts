@@ -8,6 +8,7 @@ interface player {
   score: number
   isGameOver: boolean
   room: string
+  id: number
 }
 
 export function createEmptyBoard(): number[][] {
@@ -22,10 +23,13 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
     score: 0,
     isGameOver: false,
     room: room,
+    id: 1,
   }
   if (games.has(room)) joinRoom(room, player)
   else createRoom(room, player)
   updateGameRoom(room)
+  socket.emit('you_join', Number(player.id))
+  console.log(player.id)
 }
 
 function updateGameRoom(room: string) {
@@ -61,11 +65,12 @@ function updateGameRoom(room: string) {
 }
 
 function createRoom(room: string, player: player) {
-  games.set(room, { players: [player], spectators: [], started: false, pieces: [] })
+  games.set(room, { players: [player], spectators: [], started: false, pieces: [], ids: 2 })
 }
 
 function joinRoom(room: string, player: player) {
   const gameRoom = games.get(room)
+  player.id = gameRoom.ids++
   if (gameRoom.started) {
     gameRoom.spectators.push(player)
   } else {
@@ -103,7 +108,7 @@ export function generateRandomBag(): number[] {
   return pieces
 }
 
-export function getBags(numBags: number = 5): number[] {
+export function getBags(numBags: number): number[] {
   const pieces: number[] = []
   for (let i = 0; i < numBags; i++) {
     pieces.push(...generateRandomBag())
@@ -117,10 +122,16 @@ export function startGame(room: string, name: string, socket: Socket) {
   if (gameRoom.players[0].name !== name || gameRoom.players[0].socket !== socket) return
 
   gameRoom.started = true
-  gameRoom.pieces = getBags(10)
+  gameRoom.pieces = getBags(3)
+
+  const playersIds: number[] = []
+  gameRoom.players.forEach((player: { id: number }) => {
+    playersIds.push(player.id)
+  })
 
   socket.nsp.to(room).emit('game_status', true)
   socket.nsp.to(room).emit('pieces_batch', gameRoom.pieces)
+  socket.nsp.to(room).emit('all_player', playersIds)
 }
 
 export function handleBoardUpdate(
@@ -140,20 +151,21 @@ export function handleBoardUpdate(
       name: player.name,
       board: player.board,
       isGameOver: data.isGameOver,
+      id: player.id,
     }
     socket.broadcast.to(player.room).emit('game_update', gameData)
   })
 }
 
 export function handleMorePiecesRequest(socket: Socket) {
-  for (const [, gameRoom] of games.entries()) {
-    if (!gameRoom.started) continue
-    const player = gameRoom.players.find((p: player) => p.socket === socket)
-    if (!player) continue
-    const newPieces = getBags(5)
-    socket.emit('more_pieces', newPieces)
-    break
-  }
+  games.forEach((game) => {
+    if (!game.started) return
+    const player = game.players.find((p: player) => p.socket === socket)
+    if (!player) return
+    const newPieces = getBags(2)
+
+    socket.nsp.to(player.room).emit('more_pieces', newPieces)
+  })
 }
 
 export function changeTeam(room: string, name: string, socket: Socket) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 import HoldComponent from '@/components/game/HoldComponent.vue'
@@ -14,6 +14,11 @@ const VISIBLE_ROWS = 20
 const BUFFER_ROWS = 2
 const TOTAL_ROWS = VISIBLE_ROWS + BUFFER_ROWS
 const COLS = 10
+const PIDS = ref(Array(0))
+
+const props = defineProps<{
+  id: number
+}>()
 
 const {
   board,
@@ -45,20 +50,31 @@ function onMorePieces(pieces: number[]) {
 }
 
 function onPenality(lines: number) {
-  console.log('test')
   penalityLine(lines)
+}
+
+function onStart(playerIds: number[]) {
+  playerIds.forEach((playerId) => {
+    if (playerId != props.id) {
+      PIDS.value.push(playerId)
+    }
+  })
+  console.log(playerIds)
+  console.log(props.id)
 }
 
 onMounted(() => {
   socket.on('pieces_batch', onPiecesBatch)
   socket.on('more_pieces', onMorePieces)
   socket.on('get_penality', onPenality)
+  socket.on('all_player', onStart)
 })
 
 onUnmounted(() => {
   socket.off('pieces_batch', onPiecesBatch)
   socket.off('more_pieces', onMorePieces)
   socket.off('get_penality', onPenality)
+  socket.off('all_player', onStart)
 })
 
 interface Cell {
@@ -155,6 +171,7 @@ const ghostCells = computed<Cell[]>(() => {
       />
 
       <div v-if="isGameOver" class="game-over">GAME OVER</div>
+      <!--      <div v-if="gameWin" class="game-win">WIN</div>-->
     </div>
 
     <div
@@ -180,7 +197,9 @@ const ghostCells = computed<Cell[]>(() => {
     <span>Level: {{ level }}</span>
     <span>Lines: {{ linesCount }}</span>
   </div>
-  <SpectrumComponent name="sdf" />
+  <template v-for="(id, Index) in PIDS" :key="Index">
+    <SpectrumComponent :id="id" />
+  </template>
 </template>
 
 <style scoped>
@@ -235,6 +254,19 @@ const ghostCells = computed<Cell[]>(() => {
 }
 
 .game-over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.7);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.game-win {
   position: absolute;
   inset: 0;
   display: flex;

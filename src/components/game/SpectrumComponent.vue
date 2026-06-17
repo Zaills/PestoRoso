@@ -5,15 +5,23 @@ import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { socket } from '@/socket.ts'
 
 const props = defineProps<{
-  name: string
+  id: number
   cellSize?: number
 }>()
 
 const boardMatrix = ref<number[][]>(createEmptyBoard())
 
-function onGameUpdate(gameData: { name: string; board: number[][]; isGameOver: boolean }) {
-  if (gameData.name == props.name) {
+let isGameOver = false
+
+function onGameUpdate(gameData: {
+  name: string
+  board: number[][]
+  isGameOver: boolean
+  id: number
+}): void {
+  if (gameData.id == props.id) {
     boardMatrix.value = gameData.board
+    isGameOver = gameData.isGameOver
   }
 }
 
@@ -86,10 +94,24 @@ const boardHeight = computed(() => {
       :x="cell.x"
       :y="cell.y - BUFFER_ROWS"
     />
+    <div v-if="isGameOver" class="game-over">GAME OVER</div>
   </div>
 </template>
 
 <style scoped>
+.game-over {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  background-color: rgb(0 0 0 / 0.7);
+  color: white;
+  font-size: 1.5em;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
 .opponent-game-area {
   background-color: rgb(0 0 0 / 0.8);
   position: relative;
