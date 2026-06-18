@@ -37,29 +37,27 @@ function updateGameRoom(room: string) {
   const playerList: string[] = []
   const spectatorList: string[] = []
 
-  gameRoom.players.forEach((player: { name: string } | undefined) => {
-    if (player !== undefined) playerList.push(player.name)
+  gameRoom.players.forEach((player: { name: string }) => {
+    playerList.push(player.name)
   })
-  gameRoom.spectators.forEach((player: { name: string } | undefined) => {
-    if (player !== undefined) spectatorList.push(player.name)
+  gameRoom.spectators.forEach((player: { name: string }) => {
+    spectatorList.push(player.name)
   })
 
   gameRoom.players.forEach(
     (
       player:
-        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } }
-        | undefined,
+        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } },
     ) => {
-      if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
+      player.socket.emit('room_update', playerList, spectatorList)
     },
   )
   gameRoom.spectators.forEach(
     (
       player:
-        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } }
-        | undefined,
+        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } },
     ) => {
-      if (player !== undefined) player.socket.emit('room_update', playerList, spectatorList)
+      player.socket.emit('room_update', playerList, spectatorList)
     },
   )
 }
@@ -84,6 +82,7 @@ export function leaveRoom(socket: Socket) {
     game.players = game.players.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
         players.socket !== socket,
+
     )
     game.spectators = game.spectators.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
@@ -94,7 +93,7 @@ export function leaveRoom(socket: Socket) {
     } else {
       updateGameRoom(key)
     }
-    socket.leave(game.room)
+    socket.leave(key)
   })
   toDelete.forEach((game) => games.delete(game))
 }
@@ -103,7 +102,7 @@ export function generateRandomBag(): number[] {
   const pieces = [1, 2, 3, 4, 5, 6, 7]
   for (let i = pieces.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[pieces[i], pieces[j]] = [pieces[j], pieces[i]]
+    ;[pieces[i]!, pieces[j]!] = [pieces[j]!, pieces[i]!]
   }
   return pieces
 }
@@ -181,14 +180,10 @@ export function changeTeam(room: string, name: string, socket: Socket) {
     const player = gameRoom.spectators.find(
       (player: { socket: Socket }) => player.socket === socket,
     )
-    if (player !== undefined) {
-      gameRoom.players.push(player)
-      gameRoom.spectators = gameRoom.spectators.filter(
-        (player: { socket: Socket }) => player.socket !== socket,
-      )
-    } else {
-      return
-    }
+    gameRoom.players.push(player)
+    gameRoom.spectators = gameRoom.spectators.filter(
+      (player: { socket: Socket }) => player.socket !== socket,
+    )
   }
   updateGameRoom(room)
 }
