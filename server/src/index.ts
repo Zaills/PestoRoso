@@ -13,7 +13,7 @@ app.use(express.json())
 const httpServer = createServer(app)
 initSocket(httpServer)
 
-function getLocalIpAddress() {
+export function getLocalIpAddress() {
   const interfaces = os.networkInterfaces()
   for (const interfaceName in interfaces) {
     const networkInterface = interfaces[interfaceName]
