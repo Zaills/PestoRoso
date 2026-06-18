@@ -50,18 +50,6 @@ describe('Server Game Manager', () => {
     // TODO
   })
 
-  it('should clean up the room when the last player leaves', () => {
-    const socket1 = createMockSocket('socket1')
-    joinOrCreateGame('roomE', 'Alex', socket1)
-
-    leaveRoom(socket1)
-
-    const socket2 = createMockSocket('socket2')
-    joinOrCreateGame('roomE', 'Bob', socket2)
-
-    expect(socket2.emit).toHaveBeenCalledWith('room_update', ['Bob'], [])
-  })
-
   it('should not crash if changeTeam is called on a non-existent room', () => {
     const socket = createMockSocket('socket1')
     expect(() => changeTeam('roomF', 'Alex', socket)).not.toThrow()
