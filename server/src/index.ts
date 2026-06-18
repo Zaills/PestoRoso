@@ -2,10 +2,9 @@ import express from 'express'
 import type { Request, Response } from 'express'
 import { createServer } from "http"
 import cors from 'cors'
-import { initSocket } from './socket';
-import * as os from 'node:os'
+import { initSocket, getLocalIpAddress } from './socket'
 
-const app = express()
+export const app = express()
 
 app.use(cors())
 app.use(express.json())
@@ -13,20 +12,6 @@ app.use(express.json())
 const httpServer = createServer(app)
 initSocket(httpServer)
 
-export function getLocalIpAddress() {
-  const interfaces = os.networkInterfaces()
-  for (const interfaceName in interfaces) {
-    const networkInterface = interfaces[interfaceName]
-    if (networkInterface) {
-      for (const net of networkInterface) {
-        if (net.family === 'IPv4' && !net.internal) {
-          return net.address
-        }
-      }
-    }
-  }
-  return 'localhost'
-}
 
 const PORT = process.env.PORT || 3000;
 

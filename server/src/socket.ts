@@ -39,7 +39,7 @@ interface ServerToClientEvents {
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
-function getLocalIpAddress() {
+export function getLocalIpAddress() {
   const interfaces = os.networkInterfaces()
   for (const interfaceName in interfaces) {
     const networkInterface = interfaces[interfaceName]
