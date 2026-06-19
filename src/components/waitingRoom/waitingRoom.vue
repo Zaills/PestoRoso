@@ -22,59 +22,181 @@ function startGame() {
 </script>
 
 <template>
-  <div class="waitingRoom">
-    <div class="column">
-      <span class="column-title">Players</span>
-      <div class="list">
-        <template v-for="(player, index) in playerList" :key="index">
-          <PlayerIcon :player="player" />
-        </template>
+  <div class="room-container">
+    <div class="waitingRoom">
+      <div class="column">
+        <span class="column-title">PLAYERS</span>
+        <div class="list">
+          <template v-for="(player, index) in playerList" :key="index">
+            <PlayerIcon :player="player" />
+          </template>
+        </div>
+      </div>
+
+      <div class="column">
+        <span class="column-title">VIEWERS</span>
+        <div class="list">
+          <template v-for="(player, index) in ViewerList" :key="index">
+            <PlayerIcon :player="player" />
+          </template>
+        </div>
       </div>
     </div>
-    <div class="column">
-      <span class="column-title">Viewers</span>
-      <div class="list">
-        <template v-for="(player, index) in ViewerList" :key="index">
-          <PlayerIcon :player="player" />
-        </template>
-      </div>
+
+    <div class="actions-container">
+      <span class="shadow-container secondary">
+        <button class="btn-retro btn-secondary" @click="changeTeam()">CHANGE TEAM</button>
+      </span>
+
+      <span v-if="name === playerList[0]" class="shadow-container primary">
+        <button class="btn-retro btn-primary" @click="startGame()">START GAME</button>
+      </span>
     </div>
   </div>
-  <button v-if="name === playerList[0]" @click="startGame()">Start Game</button>
-  <button @click="changeTeam()">Change Team</button>
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
+
+/* Conteneur global */
+.room-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  font-family: 'Titan One', sans-serif;
+}
+
+/* --- LE SALON D'ATTENTE --- */
 .waitingRoom {
   display: flex;
   flex-direction: row;
-  align-items: center;
-
+  gap: 16px;
   white-space: nowrap;
+}
 
-  background-color: rgb(90 90 90 / 0.8);
-  border-radius: 4px;
+.column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #222222; /* Fond sombre rétro */
+  width: 13em;
+  padding: 16px;
 
-  .column,
-  .list {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    justify-items: center;
-    width: 50%;
-  }
+  /* Chanfrein sur les blocs de listes */
+  clip-path: polygon(
+    10px 0%,
+    calc(100% - 10px) 0%,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0% calc(100% - 10px),
+    0% 10px
+  );
+}
 
-  .list {
-    width: 75% !important;
-    height: 100px;
-    max-height: 100px;
-    overflow: scroll;
-    scrollbar-width: none;
-    ::-webkit-scrollbar {
-      display: none;
-    }
-    gap: 1px;
-  }
+.column-title {
+  color: #ffffff;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 150px; /* Légèrement agrandi pour le confort visuel */
+  max-height: 150px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Cache la scrollbar sur Firefox */
+}
+
+/* Cache la scrollbar sur Chrome/Safari */
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- LES BOUTONS D'ACTIONS --- */
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.shadow-container {
+  display: block;
+  transition: filter 0.1s ease;
+}
+
+/* Ombre noire pour le bouton principal */
+.shadow-container.primary {
+  filter: drop-shadow(0 4px 0 #000000);
+}
+
+/* Ombre rouge foncé pour le bouton secondaire */
+.shadow-container.secondary {
+  filter: drop-shadow(0 4px 0 #5a0b0b);
+}
+
+/* Effet d'enfoncement au clic */
+.shadow-container:active {
+  filter: drop-shadow(0 0px 0 #000000);
+}
+.shadow-container:active .btn-retro {
+  transform: translateY(4px);
+}
+
+/* Base commune des boutons */
+.btn-retro {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.3rem;
+  padding: 12px 24px;
+  cursor: pointer;
+
+  clip-path: polygon(
+    10px 0%,
+    calc(100% - 10px) 0%,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0% calc(100% - 10px),
+    0% 10px
+  );
+
+  transition:
+    transform 0.1s ease,
+    background-color 0.2s,
+    color 0.2s;
+}
+
+/* Bouton principal (START GAME) - Ton style RED TETRIS */
+.btn-primary {
+  background-color: #eae7e7;
+  color: #bf1818;
+}
+.shadow-container.primary:hover .btn-primary {
+  background-color: #ffffff;
+}
+
+/* Bouton secondaire (CHANGE TEAM) - Rouge brique/sombre */
+.btn-secondary {
+  background-color: #bf1818;
+  color: #ffffff;
+}
+.shadow-container.secondary:hover .btn-secondary {
+  background-color: #d62222;
 }
 </style>

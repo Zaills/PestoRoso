@@ -4,35 +4,51 @@ import TitleComponent from '@/components/Home/TitleComponent.vue'
 </script>
 
 <template>
-  <header>
-    <AppBackground />
-    <TitleComponent />
-  </header>
+  <!-- Le fond est mis au premier niveau pour couvrir toute l'application -->
+  <AppBackground />
 
-  <RouterView />
+  <div class="app-layout">
+    <header class="main-header">
+      <TitleComponent />
+    </header>
+
+    <!-- Le composant main contient la page actuelle (formulaire de connexion, jeu, etc.) -->
+    <main class="main-content">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-  text-align: center;
-}
+/* Conteneur principal qui prend tout l'écran */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 
-nav {
+  /* On change ici */
+  height: 100vh; /* Hauteur stricte de l'écran */
   width: 100%;
-  font-size: 12px;
+  overflow: hidden; /* Double sécurité contre le scroll */
+
+  padding: 40px 20px;
+  box-sizing: border-box; /* Indispensable pour inclure le padding dans les 100vh */
+  position: relative;
+  z-index: 2;
+}
+
+/* Style du Header (titre) */
+.main-header {
   text-align: center;
-  margin-top: 2rem;
+  margin-bottom: 30px; /* Espace fixe entre le titre RED TETRIS et le contenu de la page */
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
+/* Zone de contenu dynamique (RouterView) */
+.main-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

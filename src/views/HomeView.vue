@@ -11,8 +11,8 @@ import ConnectionComponent from '@/components/Home/ConnectionComponent.vue'
 
 <style scoped>
 main {
-  width: 500px;
-  height: 100px;
+  //width: 500px;
+  height: 300px;
   position: absolute;
   top: 0;
   bottom: 0;
