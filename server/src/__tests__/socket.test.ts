@@ -101,16 +101,6 @@ describe('Socket Server', () => {
       })
     })
 
-    it('should handle "send_message" and echo it back', () => {
-      return new Promise<void>((resolve) => {
-        clientSocket.emit('send_message', 'Hello World')
-        clientSocket.on('receive_message', (msg) => {
-          expect(msg).toBe('Hello World')
-          resolve()
-        })
-      })
-    })
-
     it('should call joinOrCreateGame on "join_room"', () => {
       const data = { room: 'roomA', name: 'Alex' }
       clientSocket.emit('join_room', data)

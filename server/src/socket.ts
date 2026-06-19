@@ -22,7 +22,6 @@ interface ClientToServerEvents {
 }
 
 interface ServerToClientEvents {
-  receive_message: (message: string) => void
   room_update: (Player: string[], Spectator: string[]) => void
   game_status: (started: boolean) => void
   pieces_batch: (pieces: number[]) => void
@@ -69,11 +68,6 @@ export const initSocket = (httpServer: HttpServer) => {
 
   io.on('connection', (socket) => {
     console.log(`🟢 User connected: ${socket.id}`)
-
-    socket.on('send_message', (message) => {
-      console.log(`Message from ${socket.id}: ${message}`)
-      socket.emit('receive_message', message)
-    })
 
     socket.on('disconnect', () => {
       leaveRoom(socket)
