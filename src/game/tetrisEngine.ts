@@ -1,6 +1,7 @@
 import { socket } from '@/socket.ts'
+export type PieceId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
-export const PIECES: Record<number, number[][]> = {
+export const PIECES: Record<PieceId, number[][]> = {
   1: [
     [0, 0, 0, 0],
     [1, 1, 1, 1],
@@ -43,7 +44,7 @@ export const PIECES: Record<number, number[][]> = {
 
 export type PieceName = 'I' | 'J' | 'L' | 'O' | 'S' | 'T' | 'Z' | 'penality'
 
-export const PIECE_NAMES: Record<number, PieceName> = {
+export const PIECE_NAMES: Record<PieceId, PieceName> = {
   1: 'I',
   2: 'J',
   3: 'L',
@@ -58,18 +59,19 @@ export interface PieceState {
   matrix: number[][]
   x: number
   y: number
-  pieceId: number
+  pieceId: PieceId
 }
 
 export function createEmptyBoard(): number[][] {
   return Array.from({ length: 22 }, () => Array(10).fill(0))
 }
 
-export function spawnPiece(pieceId: number): PieceState {
+export function spawnPiece(pieceId: PieceId): PieceState {
   const matrix = PIECES[pieceId].map((row) => [...row])
+  const matrixWidth = matrix[0]?.length ?? 0
   return {
     matrix,
-    x: Math.floor(10 / 2) - Math.floor(matrix[0].length / 2),
+    x: Math.floor(10 / 2) - Math.floor(matrixWidth / 2),
     y: 0,
     pieceId,
   }
@@ -83,13 +85,14 @@ export function checkCollision(
   rotatedMatrix?: number[][],
 ): boolean {
   const matrix = rotatedMatrix ?? piece.matrix
-  for (let y = 0; y < matrix.length; y++) {
-    for (let x = 0; x < matrix[y].length; x++) {
-      if (matrix[y][x] !== 0) {
+  for (const [y, row] of matrix.entries()) {
+    for (const [x, cell] of row.entries()) {
+      if (cell !== 0) {
         const newX = piece.x + x + dx
         const newY = piece.y + y + dy
+
         if (newX < 0 || newX >= 10 || newY >= 22) return true
-        if (newY >= 0 && board[newY][newX] !== 0) return true
+        if (newY >= 0 && board[newY]?.[newX] !== 0) return true
       }
     }
   }
@@ -101,7 +104,7 @@ export function rotateMatrix(matrix: number[][]): number[][] {
   const rotated = Array.from({ length: N }, () => Array(N).fill(0))
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
-      rotated[x][N - 1 - y] = matrix[y][x]
+      rotated[x]![N - 1 - y] = matrix[y]![x]
     }
   }
   return rotated
@@ -109,17 +112,21 @@ export function rotateMatrix(matrix: number[][]): number[][] {
 
 export function lockPiece(board: number[][], piece: PieceState): number[][] {
   const newBoard = board.map((row) => [...row])
-  for (let y = 0; y < piece.matrix.length; y++) {
-    for (let x = 0; x < piece.matrix[y].length; x++) {
-      if (piece.matrix[y][x] !== 0) {
+
+  for (const [y, row] of piece.matrix.entries()) {
+    for (const [x, cell] of row.entries()) {
+      if (cell !== 0) {
         const boardY = piece.y + y
         const boardX = piece.x + x
+
         if (boardY >= 0 && boardY < 22) {
-          newBoard[boardY][boardX] = piece.pieceId
+          const targetRow = newBoard[boardY]
+          targetRow![boardX] = piece.pieceId
         }
       }
     }
   }
+
   return newBoard
 }
 

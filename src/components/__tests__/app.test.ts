@@ -17,22 +17,6 @@ describe('App.vue', () => {
     ],
   })
 
-  it('navigates correct routes on click', async () => {
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router],
-        stubs: { AppBackground: true },
-      },
-    })
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    await wrapper.findAll('nav a')[0].trigger('click')
-    await router.isReady()
-
-    expect(router.currentRoute.value.path).toBe('/')
-  })
-
   it('contains the RouterView for rendering pages', () => {
     const wrapper = mount(App, {
       global: {

@@ -1,16 +1,16 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import request from 'supertest'
-import '../index'
-
-vi.mock('./socket', () => ({
-  initSocket: vi.fn(),
-}))
+import { app } from '../index.ts'
 
 describe('Express Server', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should have the status API running', async () => {
-    const response = await request('http://localhost:3000').get('/api/status')
+    const response = await request(app).get('/api/status')
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ status: 'API is running' })

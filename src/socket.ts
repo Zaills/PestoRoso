@@ -5,7 +5,3 @@ const URL = `http://${window.location.hostname}:3000`
 export const socket = io(URL, {
   autoConnect: false,
 })
-
-socket.on('receive_message', (message) => {
-  console.log(message)
-})
