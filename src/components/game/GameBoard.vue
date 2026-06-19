@@ -5,7 +5,7 @@ import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 import HoldComponent from '@/components/game/HoldComponent.vue'
 import InputHandler from '@/components/game/InputHandler.vue'
 import { socket } from '@/socket'
-import { PIECE_NAMES, type PieceName } from '@/game/tetrisEngine'
+import { PIECE_NAMES, type PieceId, type PieceName } from '@/game/tetrisEngine'
 import { useGameState } from '@/game/useGameState'
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
 
@@ -87,9 +87,9 @@ const boardCells = computed<Cell[]>(() => {
   const cells: Cell[] = []
   for (let row = 0; row < TOTAL_ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
-      const val = board.value[row][col]
+      const val: number = board.value[row]![col]!
       if (val !== 0) {
-        cells.push({ x: col, y: row, type: PIECE_NAMES[val] })
+        cells.push({ x: col, y: row, type: PIECE_NAMES[val as PieceId] })
       }
     }
   }
@@ -102,8 +102,8 @@ const currentPieceCells = computed<Cell[]>(() => {
   const type = PIECE_NAMES[p.pieceId]
   const cells: Cell[] = []
   for (let r = 0; r < p.matrix.length; r++) {
-    for (let c = 0; c < p.matrix[r].length; c++) {
-      if (p.matrix[r][c] !== 0) {
+    for (let c = 0; c < p.matrix[r]!.length; c++) {
+      if (p.matrix[r]![c] !== 0) {
         cells.push({ x: p.x + c, y: p.y + r, type })
       }
     }
@@ -119,8 +119,8 @@ const ghostCells = computed<Cell[]>(() => {
   const type = PIECE_NAMES[p.pieceId]
   const cells: Cell[] = []
   for (let r = 0; r < p.matrix.length; r++) {
-    for (let c = 0; c < p.matrix[r].length; c++) {
-      if (p.matrix[r][c] !== 0) {
+    for (let c = 0; c < p.matrix[r]!.length; c++) {
+      if (p.matrix[r]![c] !== 0) {
         cells.push({ x: p.x + c, y: gy + r, type })
       }
     }
