@@ -11,12 +11,13 @@ import {
   PIECE_NAMES,
   type PieceState,
   type PieceName,
+  type PieceId,
 } from './tetrisEngine'
 
 export function useGameState() {
   const board = ref<number[][]>(createEmptyBoard())
   const currentPiece = ref<PieceState | null>(null)
-  const heldPieceId = ref<number | null>(null)
+  const heldPieceId = ref<PieceId | null>(null)
   const canHold = ref(true)
   const pieceQueue = ref<number[]>([])
   const score = ref(0)
@@ -77,7 +78,7 @@ export function useGameState() {
     }
     const pieceId = pieceQueue.value.shift()
     if (pieceId === undefined) return
-    const piece = spawnPiece(pieceId)
+    const piece = spawnPiece(pieceId as PieceId)
     if (checkCollision(board.value, piece, 0, 0)) {
       isGameOver.value = true
       stopGravity()
