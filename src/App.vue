@@ -47,6 +47,9 @@ import TitleComponent from '@/components/Home/TitleComponent.vue'
 /* Zone de contenu dynamique (RouterView) */
 .main-content {
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   display: flex;
   justify-content: center;
   align-items: center;

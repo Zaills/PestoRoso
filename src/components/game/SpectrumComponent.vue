@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { createEmptyBoard, PIECE_NAMES, type PieceName } from '@/game/tetrisEngine'
+import { createEmptyBoard, PIECE_NAMES, type PieceId, type PieceName } from '@/game/tetrisEngine'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { socket } from '@/socket.ts'
 
 const props = defineProps<{
   id: number
+  name?: string
   cellSize?: number
+  won?: boolean
 }>()
 
 const boardMatrix = ref<number[][]>(createEmptyBoard())
-
-let isGameOver = false
+const isGameOver = ref(false)
 
 function onGameUpdate(gameData: {
   name: string
@@ -21,7 +22,7 @@ function onGameUpdate(gameData: {
 }): void {
   if (gameData.id == props.id) {
     boardMatrix.value = gameData.board
-    isGameOver = gameData.isGameOver
+    isGameOver.value = gameData.isGameOver
   }
 }
 
@@ -51,13 +52,13 @@ const boardCells = computed<Cell[]>(() => {
 
   const totalRows = boardMatrix.value.length
   if (totalRows === 0) return cells
-  const cols = boardMatrix.value[0].length
+  const cols = boardMatrix.value[0]?.length ?? 0
 
   for (let row = 0; row < totalRows; row++) {
     for (let col = 0; col < cols; col++) {
-      const val = boardMatrix.value[row][col]
+      const val = boardMatrix.value[row]?.[col] ?? 0
       if (val !== 0) {
-        cells.push({ x: col, y: row, type: PIECE_NAMES[val] })
+        cells.push({ x: col, y: row, type: PIECE_NAMES[val as PieceId] })
       }
     }
   }
@@ -75,41 +76,84 @@ const boardHeight = computed(() => {
   const visibleRows = totalRows - BUFFER_ROWS
   return visibleRows * CELL_SIZE.value
 })
+
+const displayName = computed(() => props.name || `PLAYER ${props.id}`)
 </script>
 
 <template>
-  <div
-    class="opponent-game-area"
-    :style="{
-      width: boardWidth + 'px',
-      height: boardHeight + 'px',
-      '--cell-size': CELL_SIZE + 'px',
-    }"
-  >
-    <BlockRenderer
-      v-for="(cell, i) in boardCells"
-      :key="`op-b-${i}`"
-      :type="cell.type"
-      :cell-size="CELL_SIZE"
-      :x="cell.x"
-      :y="cell.y - BUFFER_ROWS"
-    />
-    <div v-if="isGameOver" class="game-over">GAME OVER</div>
+  <div class="opponent" :class="{ dead: isGameOver, winner: won }">
+    <span class="opponent-name" :style="{ maxWidth: boardWidth + 'px' }">{{ displayName }}</span>
+    <div
+      class="opponent-game-area"
+      :style="{
+        width: boardWidth + 'px',
+        height: boardHeight + 'px',
+        '--cell-size': CELL_SIZE + 'px',
+      }"
+    >
+      <BlockRenderer
+        v-for="(cell, i) in boardCells"
+        :key="`op-b-${i}`"
+        :type="cell.type"
+        :cell-size="CELL_SIZE"
+        :x="cell.x"
+        :y="cell.y - BUFFER_ROWS"
+      />
+      <div v-if="won" class="overlay win">WIN</div>
+      <div v-else-if="isGameOver" class="overlay game-over">GAME<br />OVER</div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.game-over {
+.opponent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.opponent-name {
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: #ffffff;
+  background-color: #222222;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 2px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opponent.dead .opponent-name {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.opponent.winner .opponent-name {
+  color: #ffd21f;
+  border-color: #ffd21f;
+}
+
+.overlay {
   position: absolute;
   inset: 0;
   text-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   background-color: rgb(0 0 0 / 0.7);
   color: white;
-  font-size: 1.5em;
+  font-size: 0.9rem;
   font-weight: bold;
   letter-spacing: 2px;
+  line-height: 1.1;
+}
+
+.overlay.win {
+  color: #ffd21f;
 }
 
 .opponent-game-area {
@@ -118,11 +162,14 @@ const boardHeight = computed(() => {
   overflow: hidden;
   border: solid 2px rgba(255, 255, 255, 0.4);
   border-radius: 4px;
-  display: inline-block;
   /* Grille de fond plus discrète pour l'adversaire */
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: var(--cell-size) var(--cell-size);
+}
+
+.opponent.winner .opponent-game-area {
+  border-color: #ffd21f;
 }
 </style>

@@ -13,8 +13,14 @@ vi.mock('@/socket.ts', () => ({
     connect: vi.fn(),
     emit: vi.fn(),
     on: vi.fn(),
+    off: vi.fn(),
     disconnect: vi.fn(),
   },
+}))
+
+const mockPush = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: mockPush }),
 }))
 
 describe('Home View', () => {
@@ -65,5 +71,19 @@ describe('Home View', () => {
     const playerHandler = wrapper.getComponent({ name: 'PlayerHandler' })
     expect(playerHandler.props('playerList')).toEqual(mockPlayers)
     expect(playerHandler.props('ViewerList')).toEqual(mockSpectators)
+  })
+
+  it('sends the player back home when the room refuses the join', () => {
+    let deniedCallback: () => void = () => {}
+    vi.mocked(socket.on).mockImplementation((event, cb) => {
+      if (event === 'room_denied') deniedCallback = cb
+    })
+
+    mount(GameView, { global: { stubs: { PlayerHandler: true } } })
+
+    deniedCallback()
+
+    expect(socket.disconnect).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith('/')
   })
 })

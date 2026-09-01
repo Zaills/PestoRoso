@@ -1,6 +1,8 @@
 import type { DefaultEventsMap, Socket } from 'socket.io'
 const games = new Map()
 
+export const MAX_PLAYERS = 5
+
 interface player {
   name: string
   socket: Socket
@@ -16,6 +18,13 @@ export function createEmptyBoard(): number[][] {
 }
 
 export function joinOrCreateGame(room: string, name: string, socket: Socket) {
+  const runningGame = games.get(room)
+  // Une manche en cours ne se rejoint pas : le client est renvoyé sur l'accueil.
+  if (runningGame && runningGame.started) {
+    socket.emit('room_denied', 'game_in_progress')
+    return
+  }
+
   const player: player = {
     name,
     socket,
@@ -29,11 +38,11 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
   else createRoom(room, player)
   updateGameRoom(room)
   socket.emit('you_join', Number(player.id))
-  console.log(player.id)
 }
 
 function updateGameRoom(room: string) {
-  const gameRoom = games.get(room)!
+  const gameRoom = games.get(room)
+  if (!gameRoom) return
   const playerList: string[] = []
   const spectatorList: string[] = []
 
@@ -63,13 +72,20 @@ function updateGameRoom(room: string) {
 }
 
 function createRoom(room: string, player: player) {
-  games.set(room, { players: [player], spectators: [], started: false, pieces: [], ids: 2 })
+  games.set(room, {
+    players: [player],
+    spectators: [],
+    started: false,
+    pieces: [],
+    ids: 2,
+    playersAtStart: 0,
+  })
 }
 
 function joinRoom(room: string, player: player) {
   const gameRoom = games.get(room)
   player.id = gameRoom.ids++
-  if (gameRoom.started) {
+  if (gameRoom.players.length >= MAX_PLAYERS) {
     gameRoom.spectators.push(player)
   } else {
     gameRoom.players.push(player)
@@ -92,6 +108,7 @@ export function leaveRoom(socket: Socket) {
       toDelete.push(key)
     } else {
       updateGameRoom(key)
+      checkForWinner(key)
     }
     socket.leave(key)
   })
@@ -118,26 +135,57 @@ export function getBags(numBags: number): number[] {
 export function startGame(room: string, name: string, socket: Socket) {
   const gameRoom = games.get(room)
   if (!gameRoom) return
+  if (gameRoom.players.length === 0) return
   if (gameRoom.players[0].name !== name || gameRoom.players[0].socket !== socket) return
 
   gameRoom.started = true
   gameRoom.pieces = getBags(3)
+  gameRoom.playersAtStart = gameRoom.players.length
 
-  const playersIds: number[] = []
-  gameRoom.players.forEach((player: { id: number }) => {
-    playersIds.push(player.id)
+  const roster: { id: number; name: string }[] = []
+  gameRoom.players.forEach((player: player) => {
+    player.isGameOver = false
+    player.board = createEmptyBoard()
+    player.score = 0
+    roster.push({ id: player.id, name: player.name })
   })
 
   socket.nsp.to(room).emit('game_status', true)
   socket.nsp.to(room).emit('pieces_batch', gameRoom.pieces)
-  socket.nsp.to(room).emit('all_player', playersIds)
+  socket.nsp.to(room).emit('all_player', roster)
+}
+
+// La partie s'arrête dès qu'il ne reste qu'un seul joueur en lice.
+// Le survivant reçoit la victoire, tout le monde est notifié de la fin.
+function checkForWinner(room: string) {
+  const gameRoom = games.get(room)
+  if (!gameRoom || !gameRoom.started) return
+
+  const alive = gameRoom.players.filter((player: player) => !player.isGameOver)
+  const soloGame = gameRoom.playersAtStart <= 1
+  if (alive.length > 1) return
+  if (alive.length === 1 && soloGame) return
+
+  const winner: player | undefined = alive.length === 1 ? alive[0] : undefined
+  // La room repasse en salle d'attente : un rechargement relance une nouvelle partie.
+  gameRoom.started = false
+  gameRoom.playersAtStart = 0
+
+  const payload = {
+    winnerId: winner ? winner.id : null,
+    winnerName: winner ? winner.name : null,
+  }
+  const everyone: player[] = [...gameRoom.players, ...gameRoom.spectators]
+  everyone.forEach((player) => {
+    player.socket.emit('game_end', payload)
+  })
 }
 
 export function handleBoardUpdate(
   socket: Socket,
   data: { board: number[][]; score: number; isGameOver: boolean },
 ) {
-  games.forEach((game) => {
+  games.forEach((game, room: string) => {
     if (!game.started) return
     const player = game.players.find((p: player) => p.socket === socket)
     if (!player) return
@@ -153,6 +201,7 @@ export function handleBoardUpdate(
       id: player.id,
     }
     socket.broadcast.to(player.room).emit('game_update', gameData)
+    if (data.isGameOver) checkForWinner(room)
   })
 }
 
@@ -170,6 +219,7 @@ export function handleMorePiecesRequest(socket: Socket) {
 export function changeTeam(room: string, name: string, socket: Socket) {
   if (!games.has(room) && name != null) return
   const gameRoom = games.get(room)!
+  if (gameRoom.started) return
   const player = gameRoom.players.find((player: { socket: Socket }) => player.socket === socket)
   if (player !== undefined) {
     gameRoom.spectators.push(player)
@@ -177,9 +227,11 @@ export function changeTeam(room: string, name: string, socket: Socket) {
       (player: { socket: Socket }) => player.socket !== socket,
     )
   } else {
+    if (gameRoom.players.length >= MAX_PLAYERS) return
     const player = gameRoom.spectators.find(
       (player: { socket: Socket }) => player.socket === socket,
     )
+    if (player === undefined) return
     gameRoom.players.push(player)
     gameRoom.spectators = gameRoom.spectators.filter(
       (player: { socket: Socket }) => player.socket !== socket,

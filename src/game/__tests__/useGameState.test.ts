@@ -224,6 +224,39 @@ describe('useGameState', () => {
     expect(game.currentPiece.value?.y).toBe(18)
   })
 
+  it('should freeze the board and stop gravity when the player wins', () => {
+    const game = useGameState()
+    game.initGame([1, 2, 3])
+
+    game.winGame()
+
+    expect(game.isWinner.value).toBe(true)
+
+    const frozenY = game.currentPiece.value?.y
+    vi.advanceTimersByTime(3000)
+    expect(game.currentPiece.value?.y).toBe(frozenY)
+
+    game.moveLeft()
+    game.moveRight()
+    game.rotate()
+    game.hold()
+    expect(game.currentPiece.value?.x).toBe(3)
+  })
+
+  it('should ignore a win once the player is already game over', () => {
+    const game = useGameState()
+    game.initGame([1, 2])
+
+    // Plateau saturé : la prochaine pièce ne peut plus apparaître.
+    game.board.value = Array.from({ length: 22 }, () => Array(10).fill(8))
+    game.hardDrop()
+    expect(game.isGameOver.value).toBe(true)
+
+    game.winGame()
+
+    expect(game.isWinner.value).toBe(false)
+  })
+
   it('should clear interval loops upon unmounting to avoid performance leaks', () => {
     const game = useGameState()
     game.initGame([1])

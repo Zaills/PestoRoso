@@ -34,7 +34,9 @@ interface ServerToClientEvents {
   }) => void
   get_penalty: (lines: number) => void
   you_join: (id: number) => void
-  all_player: (playerIds: number[]) => void
+  all_player: (players: { id: number; name: string }[]) => void
+  game_end: (payload: { winnerId: number | null; winnerName: string | null }) => void
+  room_denied: (reason: string) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>

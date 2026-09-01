@@ -34,8 +34,8 @@ defineProps<{
 .player-handler {
   display: flex;
   flex-direction: column;
-  width: 30%;
-  align-content: center;
+  width: 100%;
+  align-items: center;
   justify-content: center;
 }
 </style>

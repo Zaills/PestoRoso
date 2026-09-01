@@ -63,7 +63,7 @@ describe('Waiting Room', () => {
     })
 
     const buttons = wrapper.findAll('button')
-    const startButton = buttons.find((b) => b.text() === 'Start Game')
+    const startButton = buttons.find((b) => b.text() === 'START GAME')
 
     expect(startButton).toBeDefined()
 
@@ -76,9 +76,48 @@ describe('Waiting Room', () => {
     const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
 
     const buttons = wrapper.findAll('button')
-    const startButton = buttons.find((b) => b.text() === 'Start Game')
+    const startButton = buttons.find((b) => b.text() === 'START GAME')
 
     expect(startButton).toBeUndefined()
+  })
+
+  it('caps the roster at 5 players and blocks a viewer from taking a 6th slot', async () => {
+    setMockUrl('http://localhost:3000/roomA/Frank')
+    const wrapper = mount(WaitingRoom, {
+      global: { stubs },
+      props: {
+        playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
+        ViewerList: ['Frank'],
+      },
+    })
+
+    expect(wrapper.find('.column-title').text()).toBe('PLAYERS 5/5')
+    expect(wrapper.find('.room-full').exists()).toBe(true)
+
+    const buttons = wrapper.findAll('button')
+    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
+    expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+
+    await changeTeamButton?.trigger('click')
+    expect(socket.emit).not.toHaveBeenCalled()
+  })
+
+  it('lets a player of a full room step down to the viewers', async () => {
+    setMockUrl('http://localhost:3000/roomA/Eve')
+    const wrapper = mount(WaitingRoom, {
+      global: { stubs },
+      props: {
+        playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
+        ViewerList: [],
+      },
+    })
+
+    const buttons = wrapper.findAll('button')
+    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
+    expect(changeTeamButton?.attributes('disabled')).toBeUndefined()
+
+    await changeTeamButton?.trigger('click')
+    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomA', name: 'Eve' })
   })
 
   it('change_team when the Change Team button is clicked', async () => {
@@ -86,7 +125,7 @@ describe('Waiting Room', () => {
     const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
 
     const buttons = wrapper.findAll('button')
-    const changeTeamButton = buttons.find((b) => b.text() === 'Change Team')
+    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
 
     await changeTeamButton?.trigger('click')
 

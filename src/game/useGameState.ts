@@ -24,6 +24,7 @@ export function useGameState() {
   const level = ref(1)
   const linesCount = ref(0)
   const isGameOver = ref(false)
+  const isWinner = ref(false)
 
   let gravityInterval: ReturnType<typeof setInterval> | null = null
 
@@ -45,6 +46,7 @@ export function useGameState() {
     level.value = 1
     linesCount.value = 0
     isGameOver.value = false
+    isWinner.value = false
     heldPieceId.value = null
     canHold.value = true
     currentPiece.value = null
@@ -53,7 +55,7 @@ export function useGameState() {
   }
 
   function penalityLine(lines: number) {
-    if (lines <= 0 || isGameOver.value) return
+    if (lines <= 0 || isGameOver.value || isWinner.value) return
 
     for (let i = 0; i < lines; i++) {
       const remainingBoard = board.value.slice(1)
@@ -111,7 +113,7 @@ export function useGameState() {
   }
 
   function gravity() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     if (!checkCollision(board.value, currentPiece.value, 0, 1)) {
       currentPiece.value = { ...currentPiece.value, y: currentPiece.value.y + 1 }
     } else {
@@ -133,25 +135,25 @@ export function useGameState() {
   }
 
   watch(level, () => {
-    if (!isGameOver.value) startGravity()
+    if (!isGameOver.value && !isWinner.value) startGravity()
   })
 
   function moveLeft() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     if (!checkCollision(board.value, currentPiece.value, -1, 0)) {
       currentPiece.value = { ...currentPiece.value, x: currentPiece.value.x - 1 }
     }
   }
 
   function moveRight() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     if (!checkCollision(board.value, currentPiece.value, 1, 0)) {
       currentPiece.value = { ...currentPiece.value, x: currentPiece.value.x + 1 }
     }
   }
 
   function softDrop() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     if (!checkCollision(board.value, currentPiece.value, 0, 1)) {
       currentPiece.value = { ...currentPiece.value, y: currentPiece.value.y + 1 }
       score.value += 1
@@ -161,7 +163,7 @@ export function useGameState() {
   }
 
   function rotate() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     const rotated = rotateMatrix(currentPiece.value.matrix)
     if (!checkCollision(board.value, currentPiece.value, 0, 0, rotated)) {
       currentPiece.value = { ...currentPiece.value, matrix: rotated }
@@ -180,7 +182,7 @@ export function useGameState() {
   }
 
   function hardDrop() {
-    if (!currentPiece.value || isGameOver.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value) return
     const gy = ghostPieceY.value
     score.value += (gy - currentPiece.value.y) * 2
     currentPiece.value = { ...currentPiece.value, y: gy }
@@ -188,7 +190,7 @@ export function useGameState() {
   }
 
   function hold() {
-    if (!currentPiece.value || isGameOver.value || !canHold.value) return
+    if (!currentPiece.value || isGameOver.value || isWinner.value || !canHold.value) return
     canHold.value = false
     const currentId = currentPiece.value.pieceId
     if (heldPieceId.value === null) {
@@ -199,6 +201,13 @@ export function useGameState() {
       heldPieceId.value = currentId
       currentPiece.value = spawnPiece(swapId)
     }
+  }
+
+  // Dernier joueur en lice : la partie s'arrête, le plateau se fige sur la victoire.
+  function winGame() {
+    if (isGameOver.value) return
+    isWinner.value = true
+    stopGravity()
   }
 
   onUnmounted(stopGravity)
@@ -213,7 +222,9 @@ export function useGameState() {
     level,
     linesCount,
     isGameOver,
+    isWinner,
     initGame,
+    winGame,
     addPieces,
     penalityLine,
     moveLeft,

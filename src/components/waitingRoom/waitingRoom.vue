@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { socket } from '@/socket.ts'
 import PlayerIcon from '@/components/waitingRoom/PlayerIcon.vue'
 
-defineProps<{
+// Une partie accueille au maximum 5 joueurs, les suivants restent spectateurs.
+const MAX_PLAYERS = 5
+
+const props = defineProps<{
   playerList: string[]
   ViewerList: string[]
 }>()
@@ -12,7 +16,12 @@ const length = url.split('/').length
 const name = url.split('/')[length - 1]
 const room = url.split('/')[length - 2]
 
+const isFull = computed(() => props.playerList.length >= MAX_PLAYERS)
+const isPlayer = computed(() => props.playerList.includes(name ?? ''))
+const canChangeTeam = computed(() => isPlayer.value || !isFull.value)
+
 function changeTeam() {
+  if (!canChangeTeam.value) return
   socket.emit('change_team', { room: room, name: name })
 }
 
@@ -25,7 +34,7 @@ function startGame() {
   <div class="room-container">
     <div class="waitingRoom">
       <div class="column">
-        <span class="column-title">PLAYERS</span>
+        <span class="column-title">PLAYERS {{ playerList.length }}/{{ MAX_PLAYERS }}</span>
         <div class="list">
           <template v-for="(player, index) in playerList" :key="index">
             <PlayerIcon :player="player" />
@@ -44,8 +53,14 @@ function startGame() {
     </div>
 
     <div class="actions-container">
-      <span class="shadow-container secondary">
-        <button class="btn-retro btn-secondary" @click="changeTeam()">CHANGE TEAM</button>
+      <p v-if="isFull" class="room-full">
+        ROOM FULL — {{ MAX_PLAYERS }} PLAYERS MAX, EXTRA JOINERS WATCH AS VIEWERS
+      </p>
+
+      <span class="shadow-container secondary" :class="{ disabled: !canChangeTeam }">
+        <button class="btn-retro btn-secondary" :disabled="!canChangeTeam" @click="changeTeam()">
+          CHANGE TEAM
+        </button>
       </span>
 
       <span v-if="name === playerList[0]" class="shadow-container primary">
@@ -189,6 +204,27 @@ function startGame() {
 }
 .shadow-container.primary:hover .btn-primary {
   background-color: #ffffff;
+}
+
+/* Message d'alerte quand la salle a atteint ses 5 joueurs */
+.room-full {
+  color: #ffd21f;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-align: center;
+  margin: 0;
+}
+
+/* Bouton désactivé : plus de place côté joueurs */
+.shadow-container.disabled {
+  filter: none;
+  opacity: 0.5;
+}
+.shadow-container.disabled .btn-retro {
+  cursor: not-allowed;
+}
+.shadow-container.disabled:active .btn-retro {
+  transform: none;
 }
 
 /* Bouton secondaire (CHANGE TEAM) - Rouge brique/sombre */
