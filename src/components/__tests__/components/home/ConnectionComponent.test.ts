@@ -22,8 +22,8 @@ describe('ConnectionComponent.vue', () => {
   it('renders the initial state with inputs and a disabled button', () => {
     const wrapper = mount(ConnectionComponent)
 
-    const nameInput = wrapper.find('input[placeholder="Name"]')
-    const roomInput = wrapper.find('input[placeholder="Room"]')
+    const nameInput = wrapper.find('input[placeholder="NAME"]')
+    const roomInput = wrapper.find('input[placeholder="ROOM"]')
     const button = wrapper.find('button.joinButton')
 
     expect(nameInput.exists()).toBe(true)
@@ -35,8 +35,8 @@ describe('ConnectionComponent.vue', () => {
   it('triggers focusRoom() and focuses the room input when Enter is pressed on the name input', async () => {
     const wrapper = mount(ConnectionComponent)
 
-    const nameInput = wrapper.find('input[placeholder="Name"]')
-    const roomInput = wrapper.find('input[placeholder="Room"]')
+    const nameInput = wrapper.find('input[placeholder="NAME"]')
+    const roomInput = wrapper.find('input[placeholder="ROOM"]')
 
     const focusSpy = vi.spyOn(roomInput.element as HTMLInputElement, 'focus')
 
@@ -48,8 +48,8 @@ describe('ConnectionComponent.vue', () => {
   it('enables the Join Room link only when both fields are filled', async () => {
     const wrapper = mount(ConnectionComponent)
 
-    const nameInput = wrapper.find('input[placeholder="Name"]')
-    const roomInput = wrapper.find('input[placeholder="Room"]')
+    const nameInput = wrapper.find('input[placeholder="NAME"]')
+    const roomInput = wrapper.find('input[placeholder="ROOM"]')
 
     await nameInput.setValue('John Doe')
     expect(wrapper.find('button.joinButton').exists()).toBe(true)
@@ -66,8 +66,8 @@ describe('ConnectionComponent.vue', () => {
   it('triggers ConnectionComponent() and routes correctly when Enter is pressed on the room input', async () => {
     const wrapper = mount(ConnectionComponent)
 
-    const nameInput = wrapper.find('input[placeholder="Name"]')
-    const roomInput = wrapper.find('input[placeholder="Room"]')
+    const nameInput = wrapper.find('input[placeholder="NAME"]')
+    const roomInput = wrapper.find('input[placeholder="ROOM"]')
 
     await nameInput.setValue('Alex')
     await roomInput.setValue('Dev-Room')
@@ -80,7 +80,7 @@ describe('ConnectionComponent.vue', () => {
   it('does not trigger ConnectionComponent() if one of the inputs is empty', async () => {
     const wrapper = mount(ConnectionComponent)
 
-    const roomInput = wrapper.find('input[placeholder="Room"]')
+    const roomInput = wrapper.find('input[placeholder="ROOM"]')
 
     await roomInput.setValue('Dev-Room')
     await roomInput.trigger('keyup.enter')
