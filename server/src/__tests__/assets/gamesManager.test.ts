@@ -180,6 +180,59 @@ describe('Server Game Manager', () => {
       )
     })
 
+    it('should tell every socket whether it plays or watches', () => {
+      const room = 'room-roles'
+      const socket1 = createMockSocket('role-1')
+      const socket2 = createMockSocket('role-2')
+
+      joinOrCreateGame(room, 'R1', socket1)
+      joinOrCreateGame(room, 'R2', socket2)
+      expect(socket2.emit).toHaveBeenCalledWith('role_update', 'player')
+
+      changeTeam(room, 'R2', socket2)
+      expect(socket2.emit).toHaveBeenCalledWith('role_update', 'spectator')
+      expect(socket1.emit).toHaveBeenLastCalledWith('room_update', ['R1'], ['R2'])
+    })
+
+    it('should flag only the first player as host, whatever the names are', () => {
+      const room = 'room-namesakes'
+      const host = createMockSocket('host-1')
+      const namesake = createMockSocket('host-2')
+
+      joinOrCreateGame(room, 'Alex', host)
+      joinOrCreateGame(room, 'Alex', namesake)
+
+      expect(host.emit).toHaveBeenCalledWith('host_update', true)
+      expect(namesake.emit).toHaveBeenCalledWith('host_update', false)
+      expect(namesake.emit).not.toHaveBeenCalledWith('host_update', true)
+    })
+
+    it('should hand the host flag over when the host leaves', () => {
+      const room = 'room-host-left'
+      const host = createMockSocket('left-1')
+      const next = createMockSocket('left-2')
+
+      joinOrCreateGame(room, 'Alex', host)
+      joinOrCreateGame(room, 'Bob', next)
+      expect(next.emit).toHaveBeenCalledWith('host_update', false)
+
+      leaveRoom(host)
+
+      expect(next.emit).toHaveBeenCalledWith('host_update', true)
+    })
+
+    it('should refuse a namesake trying to start the game', () => {
+      const room = 'room-fake-host'
+      const host = createMockSocket('fake-1')
+      const namesake = createMockSocket('fake-2')
+
+      joinOrCreateGame(room, 'Alex', host)
+      joinOrCreateGame(room, 'Alex', namesake)
+      startGame(room, 'Alex', namesake)
+
+      expect(namesake.nsp.emit).not.toHaveBeenCalledWith('game_status', true)
+    })
+
     it('should refuse to move a spectator back to the players when the room is full', () => {
       const room = 'room-full-2'
       const names = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']

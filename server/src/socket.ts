@@ -37,6 +37,8 @@ interface ServerToClientEvents {
   all_player: (players: { id: number; name: string }[]) => void
   game_end: (payload: { winnerId: number | null; winnerName: string | null }) => void
   room_denied: (reason: string) => void
+  role_update: (role: 'player' | 'spectator') => void
+  host_update: (isHost: boolean) => void
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>

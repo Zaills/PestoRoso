@@ -53,22 +53,18 @@ export function updateGameRoom(room: string) {
     spectatorList.push(player.name)
   })
 
-  gameRoom.players.forEach(
-    (
-      player:
-        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } },
-    ) => {
-      player.socket.emit('room_update', playerList, spectatorList)
-    },
-  )
-  gameRoom.spectators.forEach(
-    (
-      player:
-        | { socket: { emit: (arg0: string, arg1: string[], arg2: string[]) => void } },
-    ) => {
-      player.socket.emit('room_update', playerList, spectatorList)
-    },
-  )
+  // Rôle et qualité d'hôte sont poussés avant la liste. L'hôte est identifié par
+  // sa place dans la room, pas par son pseudo : un homonyme ne peut pas s'y substituer.
+  gameRoom.players.forEach((player: player, index: number) => {
+    player.socket.emit('role_update', 'player')
+    player.socket.emit('host_update', index === 0)
+    player.socket.emit('room_update', playerList, spectatorList)
+  })
+  gameRoom.spectators.forEach((player: player) => {
+    player.socket.emit('role_update', 'spectator')
+    player.socket.emit('host_update', false)
+    player.socket.emit('room_update', playerList, spectatorList)
+  })
 }
 
 function createRoom(room: string, player: player) {
@@ -98,7 +94,6 @@ export function leaveRoom(socket: Socket) {
     game.players = game.players.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>
         players.socket !== socket,
-
     )
     game.spectators = game.spectators.filter(
       (players: { socket: Socket<DefaultEventsMap, DefaultEventsMap> }) =>

@@ -3,18 +3,26 @@ import { mount } from '@vue/test-utils'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import PlayerHandler from '@/components/game/PlayerHandler.vue'
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-const socketHandlers: Record<string, Function> = {}
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import { socket } from '@/socket.ts'
 
 vi.mock('@/socket.ts', () => ({
   socket: {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    on: vi.fn((event: string, callback: Function) => {
-      socketHandlers[event] = callback
-    }),
+    on: vi.fn(),
+    off: vi.fn(),
   },
 }))
+
+type SocketCallback = (...args: unknown[]) => void
+
+function socketEvents(): Record<string, SocketCallback> {
+  const events: Record<string, SocketCallback> = {}
+  vi.mocked(socket.on).mock.calls.forEach(([eventName, callback]: [string, SocketCallback]) => {
+    events[eventName] = callback
+  })
+  return events
+}
 
 describe('PlayerHandler', () => {
   const defaultProps = {
@@ -29,64 +37,72 @@ describe('PlayerHandler', () => {
 
   const stubs = {
     GameBoard: true,
-    WaitingRoom: true,
+    ViewerBoard: true,
+    waitingRoom: true,
   }
 
-  it('renders properly and listens to socket events on mount', () => {
-    const wrapper = mount(PlayerHandler, {
-      global: { stubs },
-      props: defaultProps,
-    })
-    expect(wrapper.find('.player-handler').exists()).toBe(true)
-    expect(socketHandlers['game_status']).toBeDefined()
-    expect(socketHandlers['you_join']).toBeDefined()
+  const props = { playerList: [], ViewerList: [] }
+
+  it('Should render properly', () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
+    expect(wrapper.find('div').exists()).toBe(true)
   })
 
-  it('renders WaitingRoom initially when game is not started', () => {
-    const wrapper = mount(PlayerHandler, {
-      global: { stubs },
-      props: defaultProps,
-    })
+  it('shows the waiting room until the game starts', () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
 
-    const waitingRoom = wrapper.findComponent({ name: 'WaitingRoom' })
-    const gameBoard = wrapper.findComponent({ name: 'GameBoard' })
-
-    expect(waitingRoom.exists()).toBe(true)
-    expect(gameBoard.exists()).toBe(false)
-    expect(waitingRoom.props('playerList')).toEqual(defaultProps.playerList)
-    expect(waitingRoom.props('ViewerList')).toEqual(defaultProps.ViewerList)
+    expect(wrapper.findComponent({ name: 'waitingRoom' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'GameBoard' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'ViewerBoard' }).exists()).toBe(false)
   })
 
-  it('switches to GameBoard when "game_status" socket event sends true', async () => {
-    const wrapper = mount(PlayerHandler, {
-      global: { stubs },
-      props: defaultProps,
-    })
+  it('passes the server host flag down to the waiting room', async () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
+    const events = socketEvents()
 
-    // Trigger socket event
-    socketHandlers['game_status'](true)
+    expect(wrapper.findComponent({ name: 'waitingRoom' }).props('isHost')).toBe(false)
+
+    events['host_update'](true)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.findComponent({ name: 'WaitingRoom' }).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'GameBoard' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'waitingRoom' }).props('isHost')).toBe(true)
   })
 
-  it('passes the updated player ID to GameBoard when "you_join" socket event fires', async () => {
-    const wrapper = mount(PlayerHandler, {
-      global: { stubs },
-      props: defaultProps,
-    })
+  it('gives a player the playable board once the game starts', async () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
+    const events = socketEvents()
 
-    const testId = 42
-
-    // Emit both events: join and start game
-    socketHandlers['you_join'](testId)
-    socketHandlers['game_status'](true)
+    events['you_join'](4)
+    events['role_update']('player')
+    events['game_status'](true)
     await wrapper.vm.$nextTick()
 
-    const gameBoard = wrapper.findComponent({ name: 'GameBoard' })
-    expect(gameBoard.exists()).toBe(true)
-    expect(gameBoard.props('id')).toBe(testId)
+    const board = wrapper.findComponent({ name: 'GameBoard' })
+    expect(board.exists()).toBe(true)
+    expect(board.props('id')).toBe(4)
+    expect(wrapper.findComponent({ name: 'ViewerBoard' }).exists()).toBe(false)
   })
 
+  it('gives a spectator the viewer page instead of a playable board', async () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
+    const events = socketEvents()
+
+    events['role_update']('spectator')
+    events['game_status'](true)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findComponent({ name: 'ViewerBoard' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'GameBoard' }).exists()).toBe(false)
+  })
+
+  it('releases its socket listeners on unmount', () => {
+    const wrapper = mount(PlayerHandler, { global: { stubs }, props })
+
+    wrapper.unmount()
+
+    expect(socket.off).toHaveBeenCalledWith('game_status', expect.any(Function))
+    expect(socket.off).toHaveBeenCalledWith('you_join', expect.any(Function))
+    expect(socket.off).toHaveBeenCalledWith('role_update', expect.any(Function))
+    expect(socket.off).toHaveBeenCalledWith('host_update', expect.any(Function))
+  })
 })
