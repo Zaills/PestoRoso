@@ -260,11 +260,30 @@ describe('GameBoard', () => {
         socketEvents[eventName] = callback
       })
 
-      await socketEvents['game_end']({ winnerId: 42, winnerName: 'Me' })
+      socketEvents['game_end']({ winnerId: 42, winnerName: 'Me' })
       await wrapper.vm.$nextTick()
 
       expect(mockGameState.winGame).toHaveBeenCalled()
       expect(wrapper.find('.end-banner').text()).toContain('Me WINS THE GAME')
+    })
+    it('renders GAME OVER when game_end has no winnerName', async () => {
+      mockGameState.isGameOver.value = false
+
+      const wrapper = mount(GameBoard, { props: { id: 42 } })
+
+      type SocketCallback = (...args: unknown[]) => void
+      const socketEvents: Record<string, SocketCallback> = {}
+      vi.mocked(socket.on).mock.calls.forEach(([eventName, callback]: [string, SocketCallback]) => {
+        socketEvents[eventName] = callback
+      })
+
+      // 2. Trigger with falsy winnerName
+      socketEvents['game_end']({ winnerId: null, winnerName: null })
+      await wrapper.vm.$nextTick()
+
+      // 3. Asserts the v-else branch (<span v-else>GAME OVER</span>)
+      expect(wrapper.find('.end-banner').text()).toContain('GAME OVER')
+      expect(wrapper.find('.end-banner').text()).not.toContain('WINS THE GAME')
     })
 
     it('does not declare the local player winner when someone else wins', async () => {

@@ -22,7 +22,6 @@ interface RosterEntry {
 }
 
 const opponents = ref<RosterEntry[]>([])
-const selfName = ref<string>('')
 const winnerId = ref<number | null>(null)
 const winnerName = ref<string>('')
 const isGameFinished = ref(false)
@@ -71,7 +70,6 @@ function onStart(roster: RosterEntry[]) {
   winnerName.value = ''
   isGameFinished.value = false
   opponents.value = roster.filter((player) => player.id !== props.id)
-  selfName.value = roster.find((player) => player.id === props.id)?.name ?? ''
 }
 
 // La partie est terminée : il ne reste qu'un joueur en lice.
@@ -148,8 +146,6 @@ const ghostCells = computed<Cell[]>(() => {
   }
   return cells
 })
-
-const selfLabel = computed(() => selfName.value || 'YOU')
 
 // Au delà de deux adversaires, les spectres passent en grille 2 x 2.
 const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
@@ -283,19 +279,6 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 
 /* Bandeau sur toute la largeur du cadre : il ferme le haut du plateau
    au lieu de flotter au-dessus de la zone d'apparition des pièces. */
-.own-name {
-  color: #ffffff;
-  background-color: #bf1818;
-  border-radius: 10px 10px 0 0;
-  padding: 4px 16px;
-  font-size: 1rem;
-  letter-spacing: 2px;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .player-board {
   display: flex;
   flex-direction: row;
