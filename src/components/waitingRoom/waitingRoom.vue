@@ -18,11 +18,6 @@ const name = segments[segments.length - 1] ?? ''
 const room = segments[segments.length - 2] ?? ''
 
 const isFull = computed(() => props.playerList.length >= MAX_PLAYERS)
-// Deux joueurs peuvent porter le même pseudo : seul l'hôte désigné par le serveur
-// voit le bouton, et on prévient la salle que la liste est ambiguë.
-const hasHostNameClash = computed(
-  () => props.playerList.filter((player) => player === props.playerList[0]).length > 1,
-)
 const isPlayer = computed(() => props.playerList.includes(name ?? ''))
 const canChangeTeam = computed(() => isPlayer.value || !isFull.value)
 
