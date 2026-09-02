@@ -63,12 +63,10 @@ export function useGameState() {
       const row = new Array(10).fill(8)
 
       board.value = [...remainingBoard, row]
-      if (currentPiece.value) {
-        while (checkCollision(board.value, currentPiece.value, 0, 0)) {
-          currentPiece.value = {
-            ...currentPiece.value,
-            y: currentPiece.value.y - 1,
-          }
+      while (currentPiece.value && checkCollision(board.value, currentPiece.value, 0, 0)) {
+        currentPiece.value = {
+          ...currentPiece.value,
+          y: currentPiece.value.y - 1,
         }
       }
     }
