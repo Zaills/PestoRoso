@@ -40,7 +40,7 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
   socket.emit('you_join', Number(player.id))
 }
 
-function updateGameRoom(room: string) {
+export function updateGameRoom(room: string) {
   const gameRoom = games.get(room)
   if (!gameRoom) return
   const playerList: string[] = []

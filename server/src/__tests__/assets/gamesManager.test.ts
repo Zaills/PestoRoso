@@ -11,6 +11,7 @@ import {
   leaveRoom,
   sendPenality,
   startGame,
+  updateGameRoom,
 } from '../../../assets/gamesManager'
 import { Socket } from 'socket.io'
 
@@ -99,6 +100,20 @@ describe('Server Game Manager', () => {
       joinOrCreateGame(room, 'Charlie', socket1)
       joinOrCreateGame(room, 'Bob', socket2)
       expect(() => startGame(room, 'Bob', socket2)).not.toThrow()
+      expect(socket2.nsp.to(room).emit).not.toHaveBeenCalled()
+    })
+
+    it('should not start the game if players list is empty', () => {
+      const socket = createMockSocket('socket-empty')
+      const room = 'room-empty-players'
+
+      joinOrCreateGame(room, 'SoloSpectator', socket)
+      changeTeam(room, 'SoloSpectator', socket)
+
+      vi.mocked(socket.nsp.to(room).emit).mockClear()
+      startGame(room, 'SoloSpectator', socket)
+
+      expect(socket.nsp.to(room).emit).not.toHaveBeenCalled()
     })
 
     it('should add new player to the list', () => {
@@ -125,9 +140,30 @@ describe('Server Game Manager', () => {
       expect(socket2.emit).not.toHaveBeenCalledWith('you_join', expect.anything())
     })
 
-    it('should not crash if changeTeam is called on a non-existent room', () => {
+    it('should handle changeTeam edge cases (non-existent room, started game, unknown socket)', () => {
       const socket = createMockSocket('socket-null')
+
+      // Non-existent room
       expect(() => changeTeam('room-Null', 'Alex', socket)).not.toThrow()
+
+      // Room with game already started
+      const socketStart = createMockSocket('socket-start')
+      joinOrCreateGame('room-started-change', 'Alex', socketStart)
+      startGame('room-started-change', 'Alex', socketStart)
+
+      vi.mocked(socketStart.emit).mockClear()
+      changeTeam('room-started-change', 'Alex', socketStart)
+      expect(socketStart.emit).not.toHaveBeenCalledWith(
+        'room_update',
+        expect.anything(),
+        expect.anything(),
+      )
+
+      // Socket not in players nor in spectators
+      const socketOther = createMockSocket('socket-other')
+      joinOrCreateGame('room-team-other', 'Host', socketStart)
+      changeTeam('room-team-other', 'Other', socketOther)
+      expect(socketOther.emit).not.toHaveBeenCalled()
     })
 
     it(`should cap a room at ${MAX_PLAYERS} players and send the extra ones to the spectators`, () => {
@@ -173,16 +209,14 @@ describe('Server Game Manager', () => {
         ['B5'],
       )
     })
-
   })
 
   describe('In-Game Interactions', () => {
-
-    it('should not throw if room not define', () => {
+    it('should not throw if room not defined when starting game', () => {
       const socket = createMockSocket('socket-4')
       const room = 'room-3.5'
 
-      startGame(room, 'Dave', socket)
+      expect(() => startGame(room, 'Dave', socket)).not.toThrow()
     })
 
     it('should broadcast board updates to other room members', () => {
@@ -202,6 +236,33 @@ describe('Server Game Manager', () => {
         isGameOver: false,
         id: 1,
       })
+    })
+
+    it('should ignore handleBoardUpdate, handleMorePiecesRequest, and sendPenality when game is not started or socket is not a player', () => {
+      const socket = createMockSocket('socket-unstarted')
+      const room = 'room-unstarted'
+
+      joinOrCreateGame(room, 'Unstarted', socket)
+
+      // Game not started yet
+      handleBoardUpdate(socket, { board: createEmptyBoard(), score: 0, isGameOver: false })
+      expect(socket.broadcast.to).not.toHaveBeenCalled()
+
+      handleMorePiecesRequest(socket)
+      expect(socket.nsp.to).not.toHaveBeenCalled()
+
+      sendPenality(2, socket)
+      expect(socket.broadcast.to).not.toHaveBeenCalled()
+
+      // Game started but socket is a spectator / outsider
+      const spectatorSocket = createMockSocket('spectator-socket')
+      startGame(room, 'Unstarted', socket)
+
+      handleBoardUpdate(spectatorSocket, { board: createEmptyBoard(), score: 0, isGameOver: false })
+      handleMorePiecesRequest(spectatorSocket)
+      sendPenality(2, spectatorSocket)
+
+      expect(spectatorSocket.broadcast.to).not.toHaveBeenCalled()
     })
 
     it('should request and send additional piece batches', () => {
@@ -288,7 +349,6 @@ describe('Server Game Manager', () => {
       startGame(room, 'D1', socket1)
       handleBoardUpdate(socket2, { board: createEmptyBoard(), score: 0, isGameOver: true })
 
-      // Le joueur recharge sa page : il repart de la salle d'attente, pas des spectateurs.
       leaveRoom(socket2)
       joinOrCreateGame(room, 'D3', socket3)
 
@@ -331,14 +391,26 @@ describe('Server Game Manager', () => {
       })
     })
 
-    it('should handle player disconnects cleanly', () => {
-      const socket = createMockSocket('socket-7')
+    it('should handle spectator disconnects and player disconnects cleanly', () => {
+      const socket1 = createMockSocket('socket-7')
+      const socket2 = createMockSocket('socket-8')
       const room = 'room-7'
 
-      joinOrCreateGame(room, 'Grace', socket)
-      leaveRoom(socket)
+      joinOrCreateGame(room, 'Grace', socket1)
+      joinOrCreateGame(room, 'SpectatorGrace', socket2)
+      changeTeam(room, 'SpectatorGrace', socket2)
 
-      expect(socket.leave).toHaveBeenCalledWith(room)
+      // Spectator disconnects
+      leaveRoom(socket2)
+      expect(socket2.leave).toHaveBeenCalledWith(room)
+
+      // Player disconnects and deletes empty room
+      leaveRoom(socket1)
+      expect(socket1.leave).toHaveBeenCalledWith(room)
+    })
+
+    it('should return early when updating a non-existent room', () => {
+      expect(() => updateGameRoom('non-existent-room')).not.toThrow()
     })
   })
 })
