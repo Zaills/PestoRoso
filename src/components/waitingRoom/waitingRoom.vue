@@ -12,9 +12,9 @@ const props = defineProps<{
 }>()
 
 const url = window.location.href
-const length = url.split('/').length
-const name = url.split('/')[length - 1] ?? ''
-const room = url.split('/')[length - 2] ?? ''
+const segments = url.split('/').filter(Boolean)
+const name = segments[segments.length - 1] ?? ''
+const room = segments[segments.length - 2] ?? ''
 
 const isFull = computed(() => props.playerList.length >= MAX_PLAYERS)
 const isPlayer = computed(() => props.playerList.includes(name))

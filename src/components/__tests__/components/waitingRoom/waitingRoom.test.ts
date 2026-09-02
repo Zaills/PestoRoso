@@ -153,4 +153,24 @@ describe('Waiting Room', () => {
 
     expect(socket.emit).not.toHaveBeenCalled()
   })
+  it('falls back to empty strings when url fails or is empty', async () => {
+    setMockUrl('')
+
+    const wrapper = mount(WaitingRoom, {
+      global: { stubs },
+      props: {
+        playerList: ['Alex'],
+        ViewerList: [],
+      },
+    })
+
+    const changeTeamButton = wrapper.findAll('button').find((b) => b.text() === 'CHANGE TEAM')
+    await changeTeamButton?.trigger('click')
+
+    expect(socket.emit).toHaveBeenCalledWith('change_team', {
+      room: '',
+      name: '',
+    })
+  })
+
 })
