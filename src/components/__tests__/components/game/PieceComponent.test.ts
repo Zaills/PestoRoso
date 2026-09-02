@@ -7,7 +7,6 @@ import PieceComponent from '@/components/game/PieceComponent.vue'
 // @ts-expect-error
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 
-// Mock the jsonShape asset
 vi.mock('@/assets/tetriminoShape.json', () => ({
   default: {
     I: [
