@@ -134,4 +134,23 @@ describe('Waiting Room', () => {
       name: 'Charlie',
     })
   })
+
+  it('prevents a viewer from joining the player team when the room is full', async () => {
+    setMockUrl('http://localhost:3000/roomA/Viewer1')
+
+    const wrapper = mount(WaitingRoom, {
+      global: { stubs },
+      props: {
+        playerList: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5'],
+        ViewerList: ['Viewer1'],
+      },
+    })
+
+    const changeTeamButton = wrapper.findAll('button').find((b) => b.text() === 'CHANGE TEAM')
+    expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+
+    wrapper.vm.changeTeam()
+
+    expect(socket.emit).not.toHaveBeenCalled()
+  })
 })
