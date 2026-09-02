@@ -15,7 +15,11 @@ vi.mock('@/socket.ts', () => ({
 }))
 
 vi.mock('@/components/game/BlockRenderer.vue', () => ({
-  default: { template: '<div class="block"></div>' },
+  default: {
+    name: 'BlockRenderer',
+    template: '<div class="block"></div>',
+    props: ['cellSize', 'x', 'y', 'type'],
+  },
 }))
 
 type SocketCallback = (...args: unknown[]) => void
@@ -28,6 +32,7 @@ function lastGameUpdateHandler(): SocketCallback {
   const call = vi
     .mocked(socket.on)
     .mock.calls.findLast(([eventName]: [string]) => eventName === 'game_update')
+  if (!call) throw new Error('game_update listener not found')
   return call[1]
 }
 
@@ -96,5 +101,63 @@ describe('SpectrumComponent', () => {
     wrapper.unmount()
 
     expect(socket.off).toHaveBeenCalledWith('game_update', expect.any(Function))
+  })
+
+  it('covers null/falsy boardMatrix fallback', async () => {
+    const wrapper = mount(SpectrumComponent, { props: { id: 1 } })
+
+    lastGameUpdateHandler()({
+      name: 'Test',
+      board: null as unknown as number[][],
+      isGameOver: false,
+      id: 1,
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('.block')).toHaveLength(0)
+  })
+
+  it('covers empty matrix and optional chaining fallbacks (?? 0)', async () => {
+    const wrapper = mount(SpectrumComponent, { props: { id: 1 } })
+
+    lastGameUpdateHandler()({
+      name: 'Test',
+      board: [],
+      isGameOver: false,
+      id: 1,
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.block')).toHaveLength(0)
+
+    const sparseBoard = [
+      [1, undefined], // row 0 col 1 is undefined -> triggers `?? 0`
+    ] as unknown as number[][]
+
+    lastGameUpdateHandler()({
+      name: 'Test',
+      board: sparseBoard,
+      isGameOver: false,
+      id: 1,
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.block')).toHaveLength(1)
+  })
+
+  it('covers nullish fallback for cols when first row is undefined', async () => {
+    const wrapper = mount(SpectrumComponent, { props: { id: 1 } })
+
+    // totalRows = 1 (passes totalRows === 0 check)
+    // boardMatrix.value[0] = undefined (triggers ?. and ?? 0 fallbacks)
+    const invalidMatrix = [undefined] as unknown as number[][]
+
+    lastGameUpdateHandler()({
+      name: 'Test',
+      board: invalidMatrix,
+      isGameOver: false,
+      id: 1,
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('.block')).toHaveLength(0)
   })
 })
