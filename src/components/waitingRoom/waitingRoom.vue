@@ -18,7 +18,7 @@ const name = segments[segments.length - 1] ?? ''
 const room = segments[segments.length - 2] ?? ''
 
 const isFull = computed(() => props.playerList.length >= MAX_PLAYERS)
-const isPlayer = computed(() => props.playerList.includes(name ?? ''))
+const isPlayer = computed(() => props.playerList.includes(name))
 const canChangeTeam = computed(() => isPlayer.value || !isFull.value)
 
 function changeTeam() {
@@ -208,7 +208,6 @@ function startGame() {
 }
 
 /* Message d'alerte quand la salle a atteint ses 5 joueurs */
-.name-clash,
 .room-full {
   color: #ffd21f;
   font-size: 0.8rem;

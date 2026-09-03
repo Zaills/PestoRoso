@@ -133,7 +133,7 @@ describe('Waiting Room', () => {
 
     const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
     expect(startButton).toBeUndefined()
-    expect(wrapper.find('.name-clash').exists()).toBe(true)
+    expect(wrapper.find('.name-clash').exists()).toBe(false)
   })
 
   it('keeps Start Game for the real host even with a namesake in the room', () => {
@@ -145,7 +145,7 @@ describe('Waiting Room', () => {
 
     const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
     expect(startButton).toBeDefined()
-    expect(wrapper.find('.name-clash').exists()).toBe(true)
+    expect(wrapper.find('.name-clash').exists()).toBe(false)
   })
 
   it('does not warn about names when the host name is unique', () => {

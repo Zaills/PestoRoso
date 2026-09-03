@@ -7,9 +7,15 @@ import PlayerHandler from '@/components/game/PlayerHandler.vue'
 // @ts-expect-error
 import { socket } from '@/socket.ts'
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+const socketHandlers: Record<string, Function> = {}
+
 vi.mock('@/socket.ts', () => ({
   socket: {
-    on: vi.fn(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    on: vi.fn((event: string, callback: Function) => {
+      socketHandlers[event] = callback
+    }),
     off: vi.fn(),
   },
 }))
@@ -25,11 +31,6 @@ function socketEvents(): Record<string, SocketCallback> {
 }
 
 describe('PlayerHandler', () => {
-  const defaultProps = {
-    playerList: ['Alice', 'Bob'],
-    ViewerList: ['Charlie'],
-  }
-
   beforeEach(() => {
     vi.clearAllMocks()
     Object.keys(socketHandlers).forEach((key) => delete socketHandlers[key])
