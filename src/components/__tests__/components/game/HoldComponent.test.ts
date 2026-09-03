@@ -4,7 +4,6 @@ import { mount } from '@vue/test-utils'
 // @ts-expect-error
 import HoldComponent from '@/components/game/HoldComponent.vue'
 
-
 describe('Hold', () => {
   const cellSize = 20
 
@@ -13,30 +12,23 @@ describe('Hold', () => {
   })
 
   const stubs = {
-    PieceComponent: true
+    PieceComponent: true,
   }
 
-  it('default state ("N")', () => {
+  it('renders nothing when pieceName is null', () => {
     const wrapper = mount(HoldComponent, {
-      props: { cellSize },
+      props: { cellSize, pieceName: null },
       global: { stubs },
     })
 
-    const piece = wrapper.getComponent({ name: 'PieceComponent' })
-
-    expect(piece.props('type')).toBe('N')
-    expect(piece.props('x')).toBe(2)
-    expect(piece.props('y')).toBe(2.5)
+    expect(wrapper.findAllComponents({ name: 'PieceComponent' }).length).toBe(0)
   })
 
-  it('offsets "I"', async () => {
+  it('offsets "I"', () => {
     const wrapper = mount(HoldComponent, {
-      props: { cellSize },
+      props: { cellSize, pieceName: 'I' },
       global: { stubs },
     })
-
-    wrapper.vm.addHold('I')
-    await wrapper.vm.$nextTick()
 
     const piece = wrapper.getComponent({ name: 'PieceComponent' })
     expect(piece.props('type')).toBe('I')
@@ -44,14 +36,11 @@ describe('Hold', () => {
     expect(piece.props('y')).toBe(2.9)
   })
 
-  it('offsets "O" ', async () => {
+  it('offsets "O"', () => {
     const wrapper = mount(HoldComponent, {
-      props: { cellSize },
+      props: { cellSize, pieceName: 'O' },
       global: { stubs },
     })
-
-    wrapper.vm.addHold('O')
-    await wrapper.vm.$nextTick()
 
     const piece = wrapper.getComponent({ name: 'PieceComponent' })
     expect(piece.props('type')).toBe('O')
@@ -59,19 +48,15 @@ describe('Hold', () => {
     expect(piece.props('y')).toBe(2.5)
   })
 
-  it('Replace hold', async () => {
+  it('renders "T" with default offsets', () => {
     const wrapper = mount(HoldComponent, {
-      props: { cellSize },
+      props: { cellSize, pieceName: 'T' },
       global: { stubs },
     })
-
-    wrapper.vm.addHold('T')
-    await wrapper.vm.$nextTick()
 
     const piece = wrapper.getComponent({ name: 'PieceComponent' })
     expect(piece.props('type')).toBe('T')
     expect(piece.props('x')).toBe(2)
     expect(piece.props('y')).toBe(2.5)
-
   })
 })

@@ -2,9 +2,9 @@ import express from 'express'
 import type { Request, Response } from 'express'
 import { createServer } from "http"
 import cors from 'cors'
-import { initSocket } from './socket';
+import { initSocket, getLocalIpAddress } from './socket'
 
-const app = express()
+export const app = express()
 
 app.use(cors())
 app.use(express.json())
@@ -19,6 +19,8 @@ app.get('/api/status', (req: Request, res: Response) => {
   res.json({ status: 'API is running' })
 })
 
-httpServer.listen(PORT, () => {
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
+  const localIp = getLocalIpAddress()
   console.log(`🚀 Server Started: http://localhost:${PORT}`)
+  console.log(`🚀 Server is accessible on your local network at: http://${localIp}:3000`)
 })

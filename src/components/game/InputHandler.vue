@@ -1,24 +1,35 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { socket } from '@/socket.ts'
 
-const validKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ']
+const props = defineProps<{
+  onLeft: () => void
+  onRight: () => void
+  onDown: () => void
+  onRotate: () => void
+  onHardDrop: () => void
+  onHold: () => void
+}>()
+
+const keyMap: Record<string, () => void> = {
+  ArrowLeft: () => props.onLeft(),
+  ArrowRight: () => props.onRight(),
+  ArrowDown: () => props.onDown(),
+  ArrowUp: () => props.onRotate(),
+  ' ': () => props.onHardDrop(),
+  c: () => props.onHold(),
+  C: () => props.onHold(),
+}
 
 function handleKey(e: KeyboardEvent) {
-  if (validKey.includes(e.key)) {
-    socket.emit('key_press', e.key)
+  const action = keyMap[e.key]
+  if (action) {
+    e.preventDefault()
+    action()
   }
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', handleKey)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKey)
-})
+onMounted(() => window.addEventListener('keydown', handleKey))
+onUnmounted(() => window.removeEventListener('keydown', handleKey))
 </script>
 
-<template/>
-
-<style scoped></style>
+<template />
