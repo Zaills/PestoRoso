@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import TitleComponent from '@/components/Home/TitleComponent.vue'
-import ConnectionComponent from '@/components/Home/ConnectionComponent.vue'
+import ConnectionComponent from '@/components/home/ConnectionComponent.vue'
 </script>
 
 <template>
@@ -11,7 +10,6 @@ import ConnectionComponent from '@/components/Home/ConnectionComponent.vue'
 
 <style scoped>
 main {
-  //width: 500px;
   height: 300px;
   position: absolute;
   top: 0;

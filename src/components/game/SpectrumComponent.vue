@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { createEmptyBoard, PIECE_NAMES, type PieceId, type PieceName } from '@/game/tetrisEngine'
+import {
+  BUFFER_ROWS,
+  COLS,
+  createEmptyBoard,
+  PIECE_NAMES,
+  TOTAL_ROWS,
+  type PieceId,
+  type PieceName,
+} from '@/game/tetrisEngine'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { socket } from '@/socket.ts'
 
@@ -34,9 +42,9 @@ onUnmounted(() => {
   socket.off('game_update', onGameUpdate)
 })
 
-// Valeurs par défaut si non spécifiées
-const CELL_SIZE = computed(() => props.cellSize || 12) // Plus petit par défaut (ex: 12px)
-const BUFFER_ROWS = 2
+const DEFAULT_CELL_SIZE = 12
+
+const CELL_SIZE = computed(() => props.cellSize || DEFAULT_CELL_SIZE)
 
 interface Cell {
   x: number
@@ -44,8 +52,8 @@ interface Cell {
   type: PieceName
 }
 
-// Comme dans ton composant principal, on transforme la matrice 2D
-// en une liste 1D de blocs pour faciliter le rendu avec v-for
+// As on the player board, the 2D matrix is flattened into a list of blocks
+// so it can be rendered with a single v-for.
 const boardCells = computed<Cell[]>(() => {
   const cells: Cell[] = []
   if (!boardMatrix.value) return cells
@@ -65,14 +73,14 @@ const boardCells = computed<Cell[]>(() => {
   return cells
 })
 
-// Détermine dynamiquement la largeur et hauteur de la grille de l'adversaire
+// The opponent grid is sized from the board actually received over the socket.
 const boardWidth = computed(() => {
-  const cols = boardMatrix.value?.[0]?.length || 10
+  const cols = boardMatrix.value?.[0]?.length || COLS
   return cols * CELL_SIZE.value
 })
 
 const boardHeight = computed(() => {
-  const totalRows = boardMatrix.value?.length || 22
+  const totalRows = boardMatrix.value?.length || TOTAL_ROWS
   const visibleRows = totalRows - BUFFER_ROWS
   return visibleRows * CELL_SIZE.value
 })
@@ -162,7 +170,7 @@ const displayName = computed(() => props.name || `PLAYER ${props.id}`)
   overflow: hidden;
   border: solid 2px rgba(255, 255, 255, 0.4);
   border-radius: 4px;
-  /* Grille de fond plus discrète pour l'adversaire */
+  /* Fainter background grid than on the player board. */
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);

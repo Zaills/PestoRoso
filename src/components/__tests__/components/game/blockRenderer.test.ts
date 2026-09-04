@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
-
 
 describe('Block Render', () => {
   it('renders correctly', () => {
@@ -38,25 +35,25 @@ describe('Block Render', () => {
 
     expect(wrapper.classes()).toContain('cell')
     expect(wrapper.classes()).toContain('Z')
-    expect(wrapper.classes()).not.toContain('empty')
+    expect(wrapper.classes()).not.toContain('penalty')
   })
 
   it('updates reactively when props change', async () => {
     const wrapper = mount(BlockRenderer, {
       props: {
-        type: 'empty',
+        type: 'penalty',
         cellSize: 20,
         x: 0,
         y: 0,
       },
     })
 
-    expect(wrapper.classes()).toContain('empty')
+    expect(wrapper.classes()).toContain('penalty')
 
     await wrapper.setProps({ type: 'L' })
 
     expect(wrapper.classes()).toContain('L')
-    expect(wrapper.classes()).not.toContain('empty')
+    expect(wrapper.classes()).not.toContain('penalty')
   })
 
   it('renders the cell div', () => {

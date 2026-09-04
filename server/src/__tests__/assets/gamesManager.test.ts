@@ -9,7 +9,7 @@ import {
   joinOrCreateGame,
   MAX_PLAYERS,
   leaveRoom,
-  sendPenality,
+  sendPenalty,
   startGame,
   updateGameRoom,
 } from '../../../assets/gamesManager'
@@ -73,10 +73,10 @@ describe('Server Game Manager', () => {
 
       joinOrCreateGame(room, 'Bob', socket)
 
-      changeTeam(room, 'Bob', socket)
+      changeTeam(room, socket)
       expect(socket.emit).to.have.been.calledWith('room_update', [], ['Bob'])
 
-      changeTeam(room, 'Bob', socket)
+      changeTeam(room, socket)
       expect(socket.emit).to.have.been.calledWith('room_update', ['Bob'], [])
     })
 
@@ -108,7 +108,7 @@ describe('Server Game Manager', () => {
       const room = 'room-empty-players'
 
       joinOrCreateGame(room, 'SoloSpectator', socket)
-      changeTeam(room, 'SoloSpectator', socket)
+      changeTeam(room, socket)
 
       vi.mocked(socket.nsp.to(room).emit).mockClear()
       startGame(room, 'SoloSpectator', socket)
@@ -144,7 +144,7 @@ describe('Server Game Manager', () => {
       const socket = createMockSocket('socket-null')
 
       // Non-existent room
-      expect(() => changeTeam('room-Null', 'Alex', socket)).not.toThrow()
+      expect(() => changeTeam('room-Null', socket)).not.toThrow()
 
       // Room with game already started
       const socketStart = createMockSocket('socket-start')
@@ -152,7 +152,7 @@ describe('Server Game Manager', () => {
       startGame('room-started-change', 'Alex', socketStart)
 
       vi.mocked(socketStart.emit).mockClear()
-      changeTeam('room-started-change', 'Alex', socketStart)
+      changeTeam('room-started-change', socketStart)
       expect(socketStart.emit).not.toHaveBeenCalledWith(
         'room_update',
         expect.anything(),
@@ -162,7 +162,7 @@ describe('Server Game Manager', () => {
       // Socket not in players nor in spectators
       const socketOther = createMockSocket('socket-other')
       joinOrCreateGame('room-team-other', 'Host', socketStart)
-      changeTeam('room-team-other', 'Other', socketOther)
+      changeTeam('room-team-other', socketOther)
       expect(socketOther.emit).not.toHaveBeenCalled()
     })
 
@@ -189,7 +189,7 @@ describe('Server Game Manager', () => {
       joinOrCreateGame(room, 'R2', socket2)
       expect(socket2.emit).toHaveBeenCalledWith('role_update', 'player')
 
-      changeTeam(room, 'R2', socket2)
+      changeTeam(room, socket2)
       expect(socket2.emit).toHaveBeenCalledWith('role_update', 'spectator')
       expect(socket1.emit).toHaveBeenLastCalledWith('room_update', ['R1'], ['R2'])
     })
@@ -241,7 +241,7 @@ describe('Server Game Manager', () => {
       names.forEach((name, index) => joinOrCreateGame(room, name, sockets[index]!))
       vi.mocked(sockets[5]!.emit).mockClear()
 
-      changeTeam(room, 'A6', sockets[5]!)
+      changeTeam(room, sockets[5]!)
 
       expect(sockets[5]!.emit).not.toHaveBeenCalled()
     })
@@ -253,8 +253,8 @@ describe('Server Game Manager', () => {
 
       names.forEach((name, index) => joinOrCreateGame(room, name, sockets[index]!))
 
-      changeTeam(room, 'B5', sockets[4]!)
-      changeTeam(room, 'B6', sockets[5]!)
+      changeTeam(room, sockets[4]!)
+      changeTeam(room, sockets[5]!)
 
       expect(sockets[5]!.emit).toHaveBeenLastCalledWith(
         'room_update',
@@ -291,7 +291,7 @@ describe('Server Game Manager', () => {
       })
     })
 
-    it('should ignore handleBoardUpdate, handleMorePiecesRequest, and sendPenality when game is not started or socket is not a player', () => {
+    it('should ignore handleBoardUpdate, handleMorePiecesRequest, and sendPenalty when game is not started or socket is not a player', () => {
       const socket = createMockSocket('socket-unstarted')
       const room = 'room-unstarted'
 
@@ -304,7 +304,7 @@ describe('Server Game Manager', () => {
       handleMorePiecesRequest(socket)
       expect(socket.nsp.to).not.toHaveBeenCalled()
 
-      sendPenality(2, socket)
+      sendPenalty(2, socket)
       expect(socket.broadcast.to).not.toHaveBeenCalled()
 
       // Game started but socket is a spectator / outsider
@@ -313,7 +313,7 @@ describe('Server Game Manager', () => {
 
       handleBoardUpdate(spectatorSocket, { board: createEmptyBoard(), score: 0, isGameOver: false })
       handleMorePiecesRequest(spectatorSocket)
-      sendPenality(2, spectatorSocket)
+      sendPenalty(2, spectatorSocket)
 
       expect(spectatorSocket.broadcast.to).not.toHaveBeenCalled()
     })
@@ -336,10 +336,10 @@ describe('Server Game Manager', () => {
 
       joinOrCreateGame(room, 'Frank', socket)
       startGame(room, 'Frank', socket)
-      sendPenality(2, socket)
+      sendPenalty(2, socket)
 
       expect(socket.broadcast.to).toHaveBeenCalledWith(room)
-      expect(socket.broadcast.to(room).emit).toHaveBeenCalledWith('get_penality', 2)
+      expect(socket.broadcast.to(room).emit).toHaveBeenCalledWith('get_penalty', 2)
     })
 
     it('should end the game and crown the last player standing', () => {
@@ -451,7 +451,7 @@ describe('Server Game Manager', () => {
 
       joinOrCreateGame(room, 'Grace', socket1)
       joinOrCreateGame(room, 'SpectatorGrace', socket2)
-      changeTeam(room, 'SpectatorGrace', socket2)
+      changeTeam(room, socket2)
 
       // Spectator disconnects
       leaveRoom(socket2)

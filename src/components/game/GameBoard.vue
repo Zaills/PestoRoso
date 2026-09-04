@@ -3,18 +3,22 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import NextPiecesHandler from '@/components/game/NextPiecesHandler.vue'
 import HoldComponent from '@/components/game/HoldComponent.vue'
-import InputHandler from '@/components/game/InputHandler.vue'
 import { socket } from '@/socket'
-import { PIECE_NAMES, type PieceId, type PieceName } from '@/game/tetrisEngine'
+import {
+  BUFFER_ROWS,
+  COLS,
+  PIECE_NAMES,
+  TOTAL_ROWS,
+  VISIBLE_ROWS,
+  type PieceId,
+  type PieceName,
+} from '@/game/tetrisEngine'
 import { useGameState } from '@/game/useGameState'
+import { useInputHandler } from '@/game/useInputHandler'
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
 
 const CELL_SIZE = 26
 const OPPONENT_CELL_SIZE = 12
-const VISIBLE_ROWS = 20
-const BUFFER_ROWS = 2
-const TOTAL_ROWS = VISIBLE_ROWS + BUFFER_ROWS
-const COLS = 10
 
 interface RosterEntry {
   id: number
@@ -44,7 +48,7 @@ const {
   initGame,
   winGame,
   addPieces,
-  penalityLine,
+  penaltyLine,
   moveLeft,
   moveRight,
   softDrop,
@@ -52,6 +56,15 @@ const {
   hardDrop,
   hold,
 } = useGameState()
+
+useInputHandler({
+  onLeft: moveLeft,
+  onRight: moveRight,
+  onDown: softDrop,
+  onRotate: rotate,
+  onHardDrop: hardDrop,
+  onHold: hold,
+})
 
 function onPiecesBatch(pieces: number[]) {
   initGame(pieces)
@@ -61,8 +74,8 @@ function onMorePieces(pieces: number[]) {
   addPieces(pieces)
 }
 
-function onPenality(lines: number) {
-  penalityLine(lines)
+function onPenalty(lines: number) {
+  penaltyLine(lines)
 }
 
 function onStart(roster: RosterEntry[]) {
@@ -72,7 +85,7 @@ function onStart(roster: RosterEntry[]) {
   opponents.value = roster.filter((player) => player.id !== props.id)
 }
 
-// La partie est terminée : il ne reste qu'un joueur en lice.
+// The round is over: only one player is still standing.
 function onGameEnd(payload: { winnerId: number | null; winnerName: string | null }) {
   winnerId.value = payload.winnerId
   winnerName.value = payload.winnerName ?? ''
@@ -83,7 +96,7 @@ function onGameEnd(payload: { winnerId: number | null; winnerName: string | null
 onMounted(() => {
   socket.on('pieces_batch', onPiecesBatch)
   socket.on('more_pieces', onMorePieces)
-  socket.on('get_penality', onPenality)
+  socket.on('get_penalty', onPenalty)
   socket.on('all_player', onStart)
   socket.on('game_end', onGameEnd)
 })
@@ -91,7 +104,7 @@ onMounted(() => {
 onUnmounted(() => {
   socket.off('pieces_batch', onPiecesBatch)
   socket.off('more_pieces', onMorePieces)
-  socket.off('get_penality', onPenality)
+  socket.off('get_penalty', onPenalty)
   socket.off('all_player', onStart)
   socket.off('game_end', onGameEnd)
 })
@@ -147,7 +160,7 @@ const ghostCells = computed<Cell[]>(() => {
   return cells
 })
 
-// Au delà de deux adversaires, les spectres passent en grille 2 x 2.
+// Past two opponents, the spectra are laid out on a two-column grid.
 const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 </script>
 
@@ -155,7 +168,6 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
   <div class="game-layout">
     <section class="own-column">
       <div class="board-frame">
-
         <div class="player-board">
           <div
             :style="{ height: CELL_SIZE * 4 + 'px', width: CELL_SIZE * 5 + 'px' }"
@@ -210,15 +222,6 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
             <div class="label">NEXT</div>
             <NextPiecesHandler :cell-size="CELL_SIZE" :piece-ids="nextPieceIds" />
           </div>
-
-          <InputHandler
-            :on-left="moveLeft"
-            :on-right="moveRight"
-            :on-down="softDrop"
-            :on-rotate="rotate"
-            :on-hard-drop="hardDrop"
-            :on-hold="hold"
-          />
         </div>
       </div>
 
@@ -254,8 +257,8 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 </template>
 
 <style scoped>
-/* Trois colonnes égales sur les côtés : le plateau reste centré dans la page,
-   quel que soit le nombre de spectres affichés à droite. */
+/* Equal side columns: the board stays centred in the page whatever the number
+   of opponent spectra displayed on the right. */
 .game-layout {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -277,8 +280,7 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
   flex-direction: column;
 }
 
-/* Bandeau sur toute la largeur du cadre : il ferme le haut du plateau
-   au lieu de flotter au-dessus de la zone d'apparition des pièces. */
+/* Hold box, playfield and next queue sit on a single row, sharing one frame. */
 .player-board {
   display: flex;
   flex-direction: row;
@@ -297,8 +299,8 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 }
 
 .game-area {
-  /* Les deux lignes tampon d'apparition sont clippées : une pièce qui naît
-     ne déborde plus au-dessus du cadre, sur le bandeau du joueur. */
+  /* The two spawn buffer rows are clipped, so a spawning piece never
+     overflows above the frame. */
   overflow: hidden;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -373,7 +375,7 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
   letter-spacing: 1px;
 }
 
-/* Panneau des adversaires : collé à droite du plateau, sans cadre. */
+/* Opponents panel: flush against the right of the board, no frame. */
 .opponents {
   grid-column: 3;
   justify-self: start;

@@ -1,14 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import GameBoard from '@/components/game/GameBoard.vue'
 import { ref } from 'vue'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { useGameState } from '@/game/useGameState'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { socket } from '@/socket.ts'
 
 vi.mock('@/socket', () => ({
@@ -27,7 +21,7 @@ vi.mock('@/components/game/BlockRenderer.vue', () => ({
 }))
 vi.mock('@/components/game/NextPiecesHandler.vue', () => ({ default: { template: '<div></div>' } }))
 vi.mock('@/components/game/HoldComponent.vue', () => ({ default: { template: '<div></div>' } }))
-vi.mock('@/components/game/InputHandler.vue', () => ({ default: { template: '<div></div>' } }))
+vi.mock('@/game/useInputHandler', () => ({ useInputHandler: vi.fn() }))
 vi.mock('@/components/game/SpectrumComponent.vue', () => ({
   default: { template: '<div class="spectrum"></div>' },
 }))
@@ -54,7 +48,7 @@ const mockGameState = {
   initGame: vi.fn(),
   winGame: vi.fn(),
   addPieces: vi.fn(),
-  penalityLine: vi.fn(),
+  penaltyLine: vi.fn(),
   moveLeft: vi.fn(),
   moveRight: vi.fn(),
   softDrop: vi.fn(),
@@ -199,7 +193,7 @@ describe('GameBoard', () => {
 
       expect(socket.on).toHaveBeenCalledWith('pieces_batch', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('more_pieces', expect.any(Function))
-      expect(socket.on).toHaveBeenCalledWith('get_penality', expect.any(Function))
+      expect(socket.on).toHaveBeenCalledWith('get_penalty', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('all_player', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('game_end', expect.any(Function))
 
@@ -207,7 +201,7 @@ describe('GameBoard', () => {
 
       expect(socket.off).toHaveBeenCalledWith('pieces_batch', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('more_pieces', expect.any(Function))
-      expect(socket.off).toHaveBeenCalledWith('get_penality', expect.any(Function))
+      expect(socket.off).toHaveBeenCalledWith('get_penalty', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('all_player', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('game_end', expect.any(Function))
     })
@@ -227,8 +221,8 @@ describe('GameBoard', () => {
       socketEvents['more_pieces']([5, 6])
       expect(mockGameState.addPieces).toHaveBeenCalledWith([5, 6])
 
-      socketEvents['get_penality'](2)
-      expect(mockGameState.penalityLine).toHaveBeenCalledWith(2)
+      socketEvents['get_penalty'](2)
+      expect(mockGameState.penaltyLine).toHaveBeenCalledWith(2)
     })
 
     it('handles the multiplayer all_player socket event and renders spectrum components for peer IDs', async () => {

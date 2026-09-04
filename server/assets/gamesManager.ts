@@ -1,9 +1,14 @@
 import type { DefaultEventsMap, Socket } from 'socket.io'
+
+/** Every room currently alive on this server, keyed by its name. */
 const games = new Map()
 
 export const MAX_PLAYERS = 5
 
-interface player {
+const COLS = 10
+const TOTAL_ROWS = 22
+
+interface Player {
   name: string
   socket: Socket
   board: number[][]
@@ -14,18 +19,18 @@ interface player {
 }
 
 export function createEmptyBoard(): number[][] {
-  return Array.from({ length: 22 }, () => Array(10).fill(0))
+  return Array.from({ length: TOTAL_ROWS }, () => Array(COLS).fill(0))
 }
 
 export function joinOrCreateGame(room: string, name: string, socket: Socket) {
   const runningGame = games.get(room)
-  // Une manche en cours ne se rejoint pas : le client est renvoyé sur l'accueil.
+  // A running round cannot be joined: the client is sent back to the home page.
   if (runningGame && runningGame.started) {
     socket.emit('room_denied', 'game_in_progress')
     return
   }
 
-  const player: player = {
+  const player: Player = {
     name,
     socket,
     board: createEmptyBoard(),
@@ -53,21 +58,21 @@ export function updateGameRoom(room: string) {
     spectatorList.push(player.name)
   })
 
-  // Rôle et qualité d'hôte sont poussés avant la liste. L'hôte est identifié par
-  // sa place dans la room, pas par son pseudo : un homonyme ne peut pas s'y substituer.
-  gameRoom.players.forEach((player: player, index: number) => {
+  // Role and host flag are pushed before the lists. The host is identified by its
+  // seat in the room, not by its name, so a namesake cannot take the role over.
+  gameRoom.players.forEach((player: Player, index: number) => {
     player.socket.emit('role_update', 'player')
     player.socket.emit('host_update', index === 0)
     player.socket.emit('room_update', playerList, spectatorList)
   })
-  gameRoom.spectators.forEach((player: player) => {
+  gameRoom.spectators.forEach((player: Player) => {
     player.socket.emit('role_update', 'spectator')
     player.socket.emit('host_update', false)
     player.socket.emit('room_update', playerList, spectatorList)
   })
 }
 
-function createRoom(room: string, player: player) {
+function createRoom(room: string, player: Player) {
   games.set(room, {
     players: [player],
     spectators: [],
@@ -78,7 +83,7 @@ function createRoom(room: string, player: player) {
   })
 }
 
-function joinRoom(room: string, player: player) {
+function joinRoom(room: string, player: Player) {
   const gameRoom = games.get(room)
   player.id = gameRoom.ids++
   if (gameRoom.players.length >= MAX_PLAYERS) {
@@ -110,6 +115,7 @@ export function leaveRoom(socket: Socket) {
   toDelete.forEach((game) => games.delete(game))
 }
 
+/** A shuffled bag of the seven tetriminoes, so every player gets the same sequence. */
 export function generateRandomBag(): number[] {
   const pieces = [1, 2, 3, 4, 5, 6, 7]
   for (let i = pieces.length - 1; i > 0; i--) {
@@ -138,7 +144,7 @@ export function startGame(room: string, name: string, socket: Socket) {
   gameRoom.playersAtStart = gameRoom.players.length
 
   const roster: { id: number; name: string }[] = []
-  gameRoom.players.forEach((player: player) => {
+  gameRoom.players.forEach((player: Player) => {
     player.isGameOver = false
     player.board = createEmptyBoard()
     player.score = 0
@@ -150,19 +156,19 @@ export function startGame(room: string, name: string, socket: Socket) {
   socket.nsp.to(room).emit('all_player', roster)
 }
 
-// La partie s'arrête dès qu'il ne reste qu'un seul joueur en lice.
-// Le survivant reçoit la victoire, tout le monde est notifié de la fin.
+// The round ends as soon as a single player is left standing.
+// The survivor is declared the winner and everyone is notified.
 function checkForWinner(room: string) {
   const gameRoom = games.get(room)
   if (!gameRoom || !gameRoom.started) return
 
-  const alive = gameRoom.players.filter((player: player) => !player.isGameOver)
+  const alive = gameRoom.players.filter((player: Player) => !player.isGameOver)
   const soloGame = gameRoom.playersAtStart <= 1
   if (alive.length > 1) return
   if (alive.length === 1 && soloGame) return
 
-  const winner: player | undefined = alive.length === 1 ? alive[0] : undefined
-  // La room repasse en salle d'attente : un rechargement relance une nouvelle partie.
+  const winner: Player | undefined = alive.length === 1 ? alive[0] : undefined
+  // The room goes back to the waiting state: reloading starts a fresh game.
   gameRoom.started = false
   gameRoom.playersAtStart = 0
 
@@ -170,7 +176,7 @@ function checkForWinner(room: string) {
     winnerId: winner ? winner.id : null,
     winnerName: winner ? winner.name : null,
   }
-  const everyone: player[] = [...gameRoom.players, ...gameRoom.spectators]
+  const everyone: Player[] = [...gameRoom.players, ...gameRoom.spectators]
   everyone.forEach((player) => {
     player.socket.emit('game_end', payload)
   })
@@ -182,7 +188,7 @@ export function handleBoardUpdate(
 ) {
   games.forEach((game, room: string) => {
     if (!game.started) return
-    const player = game.players.find((p: player) => p.socket === socket)
+    const player = game.players.find((p: Player) => p.socket === socket)
     if (!player) return
 
     player.board = data.board
@@ -203,7 +209,7 @@ export function handleBoardUpdate(
 export function handleMorePiecesRequest(socket: Socket) {
   games.forEach((game) => {
     if (!game.started) return
-    const player = game.players.find((p: player) => p.socket === socket)
+    const player = game.players.find((p: Player) => p.socket === socket)
     if (!player) return
     const newPieces = getBags(2)
 
@@ -211,10 +217,11 @@ export function handleMorePiecesRequest(socket: Socket) {
   })
 }
 
-export function changeTeam(room: string, name: string, socket: Socket) {
-  if (!games.has(room) && name != null) return
-  const gameRoom = games.get(room)!
+export function changeTeam(room: string, socket: Socket) {
+  if (!games.has(room)) return
+  const gameRoom = games.get(room)
   if (gameRoom.started) return
+  // A player moves to the viewers, a viewer takes a free seat among the players.
   const player = gameRoom.players.find((player: { socket: Socket }) => player.socket === socket)
   if (player !== undefined) {
     gameRoom.spectators.push(player)
@@ -235,12 +242,13 @@ export function changeTeam(room: string, name: string, socket: Socket) {
   updateGameRoom(room)
 }
 
-export function sendPenality(lines: number, socket: Socket) {
+/** Forwards the penalty lines cleared by one player to all its opponents. */
+export function sendPenalty(lines: number, socket: Socket) {
   games.forEach((game) => {
     if (!game.started) return
-    const player = game.players.find((p: player) => p.socket === socket)
+    const player = game.players.find((p: Player) => p.socket === socket)
     if (!player) return
 
-    socket.broadcast.to(player.room).emit('get_penality', lines)
+    socket.broadcast.to(player.room).emit('get_penalty', lines)
   })
 }

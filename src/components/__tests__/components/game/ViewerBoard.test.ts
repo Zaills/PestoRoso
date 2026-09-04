@@ -1,10 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import ViewerBoard from '@/components/game/ViewerBoard.vue'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { socket } from '@/socket'
 
 vi.mock('@/socket', () => ({
@@ -106,7 +102,7 @@ describe('ViewerBoard', () => {
 
     expect(twoPlayers).toBeGreaterThan(threePlayers)
     expect(threePlayers).toBeGreaterThan(fivePlayers)
-    // Toujours plus grand que les spectres affichés à côté du plateau d'un joueur.
+    // Always larger than the spectra shown next to a player board.
     expect(fivePlayers).toBeGreaterThan(12)
   })
 

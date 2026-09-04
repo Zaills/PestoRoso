@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('./assets/game.css', () => ({}))
-
 vi.mock('vue', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue')>()
   return {
@@ -18,7 +16,7 @@ vi.mock('pinia', () => ({
 }))
 
 vi.mock('./App.vue', () => ({ default: { name: 'App' } }))
-vi.mock('@/components/AppBackgroud.vue', () => ({ default: { name: 'AppBackground' } }))
+vi.mock('@/components/AppBackground.vue', () => ({ default: { name: 'AppBackground' } }))
 
 describe('Application Entry Point (main.js)', () => {
   beforeEach(() => {

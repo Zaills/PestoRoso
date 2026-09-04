@@ -8,6 +8,8 @@ import {
   lockPiece,
   clearLines,
   getGhostY,
+  COLS,
+  PENALTY_ID,
   PIECE_NAMES,
   type PieceState,
   type PieceName,
@@ -25,6 +27,8 @@ export function useGameState() {
   const linesCount = ref(0)
   const isGameOver = ref(false)
   const isWinner = ref(false)
+  // True once the piece rests on the stack but has not been locked yet.
+  const isLanded = ref(false)
 
   let gravityInterval: ReturnType<typeof setInterval> | null = null
 
@@ -47,6 +51,7 @@ export function useGameState() {
     linesCount.value = 0
     isGameOver.value = false
     isWinner.value = false
+    isLanded.value = false
     heldPieceId.value = null
     canHold.value = true
     currentPiece.value = null
@@ -54,13 +59,14 @@ export function useGameState() {
     startGravity()
   }
 
-  function penalityLine(lines: number) {
+  // Each penalty line pushes the whole stack up by one row and appends an
+  // indestructible row at the bottom.
+  function penaltyLine(lines: number) {
     if (lines <= 0 || isGameOver.value || isWinner.value) return
 
     for (let i = 0; i < lines; i++) {
       const remainingBoard = board.value.slice(1)
-
-      const row = new Array(10).fill(8)
+      const row = new Array(COLS).fill(PENALTY_ID)
 
       board.value = [...remainingBoard, row]
       while (currentPiece.value && checkCollision(board.value, currentPiece.value, 0, 0)) {
@@ -73,6 +79,7 @@ export function useGameState() {
   }
 
   function spawnNextPiece() {
+    // Refill the queue well before it runs dry, so gravity is never starved.
     if (pieceQueue.value.length < 14) {
       socket.emit('request_more_pieces')
     }
@@ -87,6 +94,7 @@ export function useGameState() {
     }
     currentPiece.value = piece
     canHold.value = true
+    isLanded.value = false
   }
 
   function addPieces(pieces: number[]) {
@@ -112,11 +120,22 @@ export function useGameState() {
 
   function gravity() {
     if (!currentPiece.value || isGameOver.value || isWinner.value) return
+
     if (!checkCollision(board.value, currentPiece.value, 0, 1)) {
       currentPiece.value = { ...currentPiece.value, y: currentPiece.value.y + 1 }
-    } else {
-      lockCurrentPiece()
+      isLanded.value = false
+      return
     }
+
+    // The piece rests on the stack: it only locks on the next frame, which leaves
+    // the player one last tick to slide or rotate it into place. If that move frees
+    // the space below, the branch above takes over again and gravity resumes.
+    if (!isLanded.value) {
+      isLanded.value = true
+      return
+    }
+
+    lockCurrentPiece()
   }
 
   function startGravity() {
@@ -198,10 +217,11 @@ export function useGameState() {
       const swapId = heldPieceId.value
       heldPieceId.value = currentId
       currentPiece.value = spawnPiece(swapId)
+      isLanded.value = false
     }
   }
 
-  // Dernier joueur en lice : la partie s'arrête, le plateau se fige sur la victoire.
+  // Last player standing: the game stops and the board freezes on the win screen.
   function winGame() {
     if (isGameOver.value) return
     isWinner.value = true
@@ -224,7 +244,7 @@ export function useGameState() {
     initGame,
     winGame,
     addPieces,
-    penalityLine,
+    penaltyLine,
     moveLeft,
     moveRight,
     softDrop,

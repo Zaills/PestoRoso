@@ -25,6 +25,8 @@ vi.mock('../tetrisEngine', () => ({
   lockPiece: vi.fn((board) => board),
   clearLines: vi.fn((board) => ({ newBoard: board, linesCleared: 0 })),
   getGhostY: vi.fn(() => 18),
+  COLS: 10,
+  PENALTY_ID: 8,
   PIECE_NAMES: ['I', 'J', 'L', 'O', 'S', 'T', 'Z'],
 }))
 
@@ -252,29 +254,29 @@ describe('useGameState', () => {
 
       vi.mocked(tetrisEngine.checkCollision).mockReturnValueOnce(true).mockReturnValueOnce(false)
 
-      state.penalityLine(1)
+      state.penaltyLine(1)
 
       expect(state.currentPiece.value?.y).toBe(-1)
       expect(state.board.value.length).toBe(20)
       expect(state.board.value[19]).toEqual(Array(10).fill(8))
     })
 
-    it('ignores penalityLine when lines <= 0, game over, or game won', () => {
+    it('ignores penaltyLine when lines <= 0, game over, or game won', () => {
       const state = useGameState()
       state.initGame([1])
       const originalBoard = [...state.board.value]
 
-      state.penalityLine(0)
-      state.penalityLine(-2)
+      state.penaltyLine(0)
+      state.penaltyLine(-2)
       expect(state.board.value).toEqual(originalBoard)
 
       state.isGameOver.value = true
-      state.penalityLine(1)
+      state.penaltyLine(1)
       expect(state.board.value).toEqual(originalBoard)
 
       state.isGameOver.value = false
       state.isWinner.value = true
-      state.penalityLine(1)
+      state.penaltyLine(1)
       expect(state.board.value).toEqual(originalBoard)
     })
 
@@ -354,6 +356,9 @@ describe('useGameState', () => {
         return dy === 1
       })
 
+      // Lock delay: the first tick only flags the piece as landed, the second locks it.
+      vi.advanceTimersByTime(1000)
+      expect(tetrisEngine.lockPiece).not.toHaveBeenCalled()
       vi.advanceTimersByTime(1000)
 
       expect(tetrisEngine.lockPiece).toHaveBeenCalledWith(
@@ -384,7 +389,8 @@ describe('useGameState', () => {
         (_board, _piece, _dx, dy) => dy === 1,
       )
 
-      vi.advanceTimersByTime(1000)
+      // Lock delay: locking happens on the second tick spent resting on the stack.
+      vi.advanceTimersByTime(2000)
 
       expect(state.board.value).toEqual(fakeClearedBoard)
       expect(state.linesCount.value).toBe(2)
@@ -479,7 +485,8 @@ describe('useGameState', () => {
       })
 
       vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, _x, dy) => dy === 1)
-      vi.advanceTimersByTime(1000)
+      // Lock delay: locking happens on the second tick spent resting on the stack.
+      vi.advanceTimersByTime(2000)
 
       expect(state.linesCount.value).toBe(10)
       expect(state.level.value).toBe(2)

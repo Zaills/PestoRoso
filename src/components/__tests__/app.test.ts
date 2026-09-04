@@ -3,17 +3,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from '@/App.vue'
 import { mount } from '@vue/test-utils'
 
-const AppBackgroundStub = {
-  template: '<div class="mock-bg"><slot /></div>',
-}
-
 describe('App.vue', () => {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
       { path: '/', name: 'home', component: { template: 'Home' } },
-      { path: '/about', name: 'about', component: { template: 'About' } },
-      { path: '/game', name: 'game', component: { template: 'Game' } },
+      { path: '/:roomId/:name', name: 'game', component: { template: 'Game' } },
     ],
   })
 
@@ -27,5 +22,4 @@ describe('App.vue', () => {
 
     expect(wrapper.findComponent({ name: 'RouterView' }).exists()).toBe(true)
   })
-
 })

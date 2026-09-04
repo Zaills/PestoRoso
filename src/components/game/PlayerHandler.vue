@@ -2,7 +2,7 @@
 import GameBoard from '@/components/game/GameBoard.vue'
 import ViewerBoard from '@/components/game/ViewerBoard.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import WaitingRoom from '@/components/waitingRoom/waitingRoom.vue'
+import WaitingRoom from '@/components/waitingRoom/WaitingRoom.vue'
 import { socket } from '@/socket.ts'
 
 const gameStarted = ref<boolean>(false)

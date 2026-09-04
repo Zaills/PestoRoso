@@ -1,10 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import PieceComponent from '@/components/game/PieceComponent.vue'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 
 vi.mock('@/assets/tetriminoShape.json', () => ({

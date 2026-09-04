@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { socket } from '@/socket.ts'
 import PlayerIcon from '@/components/waitingRoom/PlayerIcon.vue'
 
-// Une partie accueille au maximum 5 joueurs, les suivants restent spectateurs.
+// A room holds at most 5 players; anyone joining after that stays a viewer.
 const MAX_PLAYERS = 5
 
 const props = defineProps<{
@@ -23,11 +23,11 @@ const canChangeTeam = computed(() => isPlayer.value || !isFull.value)
 
 function changeTeam() {
   if (!canChangeTeam.value) return
-  socket.emit('change_team', { room: room, name: name })
+  socket.emit('change_team', { room })
 }
 
 function startGame() {
-  socket.emit('start_game', { room: room, name: name })
+  socket.emit('start_game', { room, name })
 }
 </script>
 
@@ -74,7 +74,7 @@ function startGame() {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
 
-/* Conteneur global */
+/* Outer container. */
 .room-container {
   display: flex;
   flex-direction: column;
@@ -85,7 +85,7 @@ function startGame() {
   font-family: 'Titan One', sans-serif;
 }
 
-/* --- LE SALON D'ATTENTE --- */
+/* --- THE WAITING ROOM --- */
 .waitingRoom {
   display: flex;
   flex-direction: row;
@@ -98,11 +98,11 @@ function startGame() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #222222; /* Fond sombre rétro */
+  background-color: #222222; /* Dark retro background. */
   width: 13em;
   padding: 16px;
 
-  /* Chanfrein sur les blocs de listes */
+  /* Bevelled corners on the list blocks. */
   clip-path: polygon(
     10px 0%,
     calc(100% - 10px) 0%,
@@ -128,18 +128,18 @@ function startGame() {
   align-items: center;
   gap: 8px;
   width: 100%;
-  height: 150px; /* Légèrement agrandi pour le confort visuel */
+  height: 150px;
   max-height: 150px;
   overflow-y: auto;
-  scrollbar-width: none; /* Cache la scrollbar sur Firefox */
+  scrollbar-width: none; /* Hide the scrollbar on Firefox. */
 }
 
-/* Cache la scrollbar sur Chrome/Safari */
+/* Hide the scrollbar on Chrome/Safari. */
 .list::-webkit-scrollbar {
   display: none;
 }
 
-/* --- LES BOUTONS D'ACTIONS --- */
+/* --- ACTION BUTTONS --- */
 .actions-container {
   display: flex;
   flex-direction: column;
@@ -152,17 +152,17 @@ function startGame() {
   transition: filter 0.1s ease;
 }
 
-/* Ombre noire pour le bouton principal */
+/* Black shadow for the primary button. */
 .shadow-container.primary {
   filter: drop-shadow(0 4px 0 #000000);
 }
 
-/* Ombre rouge foncé pour le bouton secondaire */
+/* Dark red shadow for the secondary button. */
 .shadow-container.secondary {
   filter: drop-shadow(0 4px 0 #5a0b0b);
 }
 
-/* Effet d'enfoncement au clic */
+/* Pressed-in effect on click. */
 .shadow-container:active {
   filter: drop-shadow(0 0px 0 #000000);
 }
@@ -170,7 +170,7 @@ function startGame() {
   transform: translateY(4px);
 }
 
-/* Base commune des boutons */
+/* Shared button base. */
 .btn-retro {
   display: block;
   width: 100%;
@@ -198,7 +198,7 @@ function startGame() {
     color 0.2s;
 }
 
-/* Bouton principal (START GAME) - Ton style RED TETRIS */
+/* Primary button (START GAME), in the RED TETRIS style. */
 .btn-primary {
   background-color: #eae7e7;
   color: #bf1818;
@@ -207,7 +207,7 @@ function startGame() {
   background-color: #ffffff;
 }
 
-/* Message d'alerte quand la salle a atteint ses 5 joueurs */
+/* Warning shown once the room has reached its player limit. */
 .room-full {
   color: #ffd21f;
   font-size: 0.8rem;
@@ -216,7 +216,7 @@ function startGame() {
   margin: 0;
 }
 
-/* Bouton désactivé : plus de place côté joueurs */
+/* Disabled button: no seat left on the players side. */
 .shadow-container.disabled {
   filter: none;
   opacity: 0.5;
@@ -228,7 +228,7 @@ function startGame() {
   transform: none;
 }
 
-/* Bouton secondaire (CHANGE TEAM) - Rouge brique/sombre */
+/* Secondary button (CHANGE TEAM), dark brick red. */
 .btn-secondary {
   background-color: #bf1818;
   color: #ffffff;

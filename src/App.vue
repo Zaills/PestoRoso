@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppBackground from '@/components/AppBackgroud.vue'
-import TitleComponent from '@/components/Home/TitleComponent.vue'
+import AppBackground from '@/components/AppBackground.vue'
+import TitleComponent from '@/components/home/TitleComponent.vue'
 </script>
 
 <template>
-  <!-- Le fond est mis au premier niveau pour couvrir toute l'application -->
+  <!-- The background sits at the top level so it covers the whole application. -->
   <AppBackground />
 
   <div class="app-layout">
@@ -12,7 +12,7 @@ import TitleComponent from '@/components/Home/TitleComponent.vue'
       <TitleComponent />
     </header>
 
-    <!-- Le composant main contient la page actuelle (formulaire de connexion, jeu, etc.) -->
+    <!-- Holds the current page: connection form, waiting room or game. -->
     <main class="main-content">
       <RouterView />
     </main>
@@ -20,31 +20,29 @@ import TitleComponent from '@/components/Home/TitleComponent.vue'
 </template>
 
 <style scoped>
-/* Conteneur principal qui prend tout l'écran */
+/* Main container, sized to the viewport so the page never scrolls. */
 .app-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
 
-  /* On change ici */
-  height: 100vh; /* Hauteur stricte de l'écran */
+  height: 100vh;
   width: 100%;
-  overflow: hidden; /* Double sécurité contre le scroll */
+  overflow: hidden;
 
   padding: 40px 20px;
-  box-sizing: border-box; /* Indispensable pour inclure le padding dans les 100vh */
+  box-sizing: border-box; /* Required so the padding stays inside the 100vh. */
   position: relative;
   z-index: 2;
 }
 
-/* Style du Header (titre) */
 .main-header {
   text-align: center;
-  margin-bottom: 30px; /* Espace fixe entre le titre RED TETRIS et le contenu de la page */
+  margin-bottom: 30px; /* Fixed gap between the RED TETRIS title and the page content. */
 }
 
-/* Zone de contenu dynamique (RouterView) */
+/* Dynamic content area rendered by the RouterView. */
 .main-content {
   width: 100%;
   flex: 1;
