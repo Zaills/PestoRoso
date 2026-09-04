@@ -7,14 +7,13 @@ import {
   startGame,
   handleBoardUpdate,
   handleMorePiecesRequest,
-  sendPenality,
+  sendPenalty,
 } from '../assets/gamesManager'
 import os from 'node:os'
 
 interface ClientToServerEvents {
-  send_message: (message: string) => void
   join_room: (payload: { room: string; name: string }) => void
-  change_team: (payload: { room: string; name: string }) => void
+  change_team: (payload: { room: string }) => void
   start_game: (payload: { room: string; name: string }) => void
   board_update: (data: { board: number[][]; score: number; isGameOver: boolean }) => void
   request_more_pieces: () => void
@@ -42,6 +41,8 @@ interface ServerToClientEvents {
 }
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents>
+
+/** First non-internal IPv4 address, so the dev server can be reached from the LAN. */
 export function getLocalIpAddress() {
   const interfaces = os.networkInterfaces()
   for (const interfaceName in interfaces) {
@@ -56,6 +57,7 @@ export function getLocalIpAddress() {
   }
   return 'localhost'
 }
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -83,8 +85,8 @@ export const initSocket = (httpServer: HttpServer) => {
       socket.join(room)
     })
 
-    socket.on('change_team', ({ room, name }) => {
-      changeTeam(room, name, socket)
+    socket.on('change_team', ({ room }) => {
+      changeTeam(room, socket)
     })
 
     socket.on('start_game', ({ room, name }) => {
@@ -93,16 +95,14 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('board_update', (data) => {
       handleBoardUpdate(socket, data)
-      // console.log(data.board)
-      // socket.broadcast.emit('receive_message', 'Polo')
     })
 
     socket.on('request_more_pieces', () => {
       handleMorePiecesRequest(socket)
     })
 
-    socket.on('clearLines', (lines: number)=> {
-      sendPenality(lines, socket)
+    socket.on('clearLines', (lines: number) => {
+      sendPenalty(lines, socket)
     })
   })
 

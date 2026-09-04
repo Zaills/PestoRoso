@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { PieceName } from '@/game/tetrisEngine'
+
 defineProps<{
-  type: 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L' | 'empty' | 'penality'
+  type: PieceName
   cellSize: number
   x: number
   y: number
@@ -52,16 +54,13 @@ defineProps<{
   background-color: #ff8c00;
 }
 
-.cell.empty {
-  background-color: dimgrey;
-  box-shadow: none;
-}
-
-.cell.penality {
+/* Penalty lines received from opponents: flat grey, they cannot be cleared. */
+.cell.penalty {
   background-color: #6a6a6a;
   box-shadow: none;
 }
 
+/* Landing preview of the current piece. */
 .cell.ghost {
   opacity: 0.3;
 }

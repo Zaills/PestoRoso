@@ -9,7 +9,7 @@
 <style scoped>
 .shadow-container {
   display: inline-block;
-  /* Crée une ombre noire décalée de 4px vers le bas qui suit le chanfrein */
+  /* Black shadow offset 4px down, following the bevelled outline. */
   filter: drop-shadow(0 4px 0 #000000);
   transition: filter 0.1s ease;
 }
@@ -38,12 +38,12 @@
   transition: transform 0.1s ease;
 }
 
-/* Quand on survole le conteneur, le bouton change de couleur */
+/* Hovering the container brightens the button. */
 .shadow-container:hover .btn-chanfrein {
   background-color: #ffffff;
 }
 
-/* Effet d'enfoncement : on descend le bouton et on réduit l'ombre */
+/* Pressed-in effect: the button moves down and the shadow collapses. */
 .shadow-container:active {
   filter: drop-shadow(0 0px 0 #000000);
 }

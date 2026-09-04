@@ -1,14 +1,14 @@
-<template>
-  <div class="icon">
-    {{ player }}
-  </div>
-</template>
-
 <script setup lang="ts">
 defineProps<{
   player: string
 }>()
 </script>
+
+<template>
+  <div class="icon">
+    {{ player }}
+  </div>
+</template>
 
 <style scoped>
 .icon {

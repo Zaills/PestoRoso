@@ -1,10 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import WaitingRoom from '@/components/waitingRoom/waitingRoom.vue'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
+import WaitingRoom from '@/components/waitingRoom/WaitingRoom.vue'
 import { socket } from '@/socket.ts'
 
 vi.mock('@/socket.ts', () => ({
@@ -69,7 +65,7 @@ describe('Waiting Room', () => {
     expect(startButton).toBeDefined()
 
     await startButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: "roomA" })
+    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: 'roomA' })
   })
 
   it('Start Game button should not be define for the 2st User', () => {
@@ -120,11 +116,11 @@ describe('Waiting Room', () => {
     expect(changeTeamButton?.attributes('disabled')).toBeUndefined()
 
     await changeTeamButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomA', name: 'Eve' })
+    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomA' })
   })
 
   it('hides Start Game from a namesake of the host', () => {
-    // Le serveur ne reconnaît qu'un hôte : l'homonyme ne reçoit pas le drapeau.
+    // The server knows a single host: a namesake never receives the host flag.
     setMockUrl('http://localhost:3000/roomA/Alex')
     const wrapper = mount(WaitingRoom, {
       global: { stubs },
@@ -164,10 +160,7 @@ describe('Waiting Room', () => {
 
     await changeTeamButton?.trigger('click')
 
-    expect(socket.emit).toHaveBeenCalledWith('change_team', {
-      room: 'roomX',
-      name: 'Charlie',
-    })
+    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomX' })
   })
 
   it('prevents a viewer from joining the player team when the room is full', async () => {
@@ -202,10 +195,6 @@ describe('Waiting Room', () => {
     const changeTeamButton = wrapper.findAll('button').find((b) => b.text() === 'CHANGE TEAM')
     await changeTeamButton?.trigger('click')
 
-    expect(socket.emit).toHaveBeenCalledWith('change_team', {
-      room: '',
-      name: '',
-    })
+    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: '' })
   })
-
 })

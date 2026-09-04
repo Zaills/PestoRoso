@@ -8,7 +8,7 @@ const playerList = ref([])
 const spectatorList = ref([])
 const router = useRouter()
 
-// Partie déjà lancée (ou room inaccessible) : on renvoie le joueur sur l'accueil.
+// The round already started (or the room is unreachable): send the player home.
 function onRoomDenied() {
   socket.disconnect()
   router.push('/')

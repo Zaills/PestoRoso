@@ -3,8 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
 import { socket } from '@/socket'
 
-// Page spectateur : aucun plateau jouable, aucun InputHandler, aucun état de jeu.
-// On se contente d'afficher, en grand, les plateaux des joueurs en lice.
+// Spectator page: no playable board, no keyboard bindings, no game state.
+// It only mirrors, at a larger scale, the boards of the players still in the round.
 interface RosterEntry {
   id: number
   name: string
@@ -38,8 +38,7 @@ onUnmounted(() => {
   socket.off('game_end', onGameEnd)
 })
 
-// Les plateaux tiennent sur une seule rangée : moins il y a de joueurs,
-// plus chaque plateau est affiché en grand.
+// The boards share a single row: the fewer players, the larger each board.
 const cellSize = computed(() => {
   const count = players.value.length
   if (count <= 2) return 28
@@ -102,7 +101,7 @@ const cellSize = computed(() => {
   padding: 80px 0;
 }
 
-/* Bandeau d'information, sous les plateaux pour ne pas manger la place à l'écran */
+/* Info bar, kept below the boards so it does not eat vertical space. */
 .viewer-footer {
   display: flex;
   align-items: center;

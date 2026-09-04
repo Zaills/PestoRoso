@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { mount } from '@vue/test-utils'
-import AppBackground from '../../AppBackgroud.vue'
+import AppBackground from '../../AppBackground.vue'
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
@@ -31,7 +31,7 @@ describe('Background', () => {
     const wrapper = mount(AppBackground)
 
     vi.spyOn(Math, 'random').mockReturnValue(0.99)
-    mockRoute.value = { path: '/about' }
+    mockRoute.value = { path: '/lobby' }
 
     await nextTick()
 

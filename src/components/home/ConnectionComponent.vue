@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
@@ -54,7 +53,7 @@ const joinRoom = () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
 
-/* Conteneur pour aligner les éléments proprement en colonne */
+/* Column layout for the name/room inputs and the join button. */
 .login-container {
   display: flex;
   flex-direction: column;
@@ -64,14 +63,14 @@ const joinRoom = () => {
   font-family: 'Titan One', sans-serif;
 }
 
-/* --- LE CONTENEUR D'OMBRE (Commun aux inputs et boutons) --- */
+/* --- SHADOW CONTAINER, shared by the inputs and the button --- */
 .shadow-container {
   display: inline-block;
   filter: drop-shadow(0 4px 0 #000000);
   transition: filter 0.1s ease;
 }
 
-/* Effet d'enfoncement au clic (uniquement si pas désactivé) */
+/* Pressed-in effect on click, unless disabled. */
 .shadow-container:not(.disabled-shadow):active {
   filter: drop-shadow(0 0px 0 #000000);
 }
@@ -80,7 +79,7 @@ const joinRoom = () => {
   transform: translateY(4px);
 }
 
-/* --- LES INPUTS --- */
+/* --- INPUTS --- */
 .input-chanfrein {
   width: 100%;
   box-sizing: border-box;
@@ -89,28 +88,35 @@ const joinRoom = () => {
   font-family: 'Titan One', sans-serif;
   font-size: 1.6rem;
   padding: 12px 20px;
-  background-color: #333333; /* Fond sombre pour contraster avec le bouton blanc */
+  background-color: #333333; /* Dark fill, to contrast with the white button. */
   color: #ffffff;
 
   clip-path: polygon(
-    8px 0%, calc(100% - 8px) 0%, 100% 8px,
-    100% calc(100% - 8px), calc(100% - 8px) 100%,
-    8px 100%, 0% calc(100% - 8px), 0% 8px
+    8px 0%,
+    calc(100% - 8px) 0%,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0% calc(100% - 8px),
+    0% 8px
   );
 
-  transition: transform 0.1s ease, background-color 0.2s;
+  transition:
+    transform 0.1s ease,
+    background-color 0.2s;
 }
 
 .input-chanfrein:focus {
-  background-color: #444444; /* Légère brillance quand on tape dedans */
+  background-color: #444444; /* Slightly brighter while typing. */
 }
 
-/* Style du texte d'aide (placeholder) */
+/* Placeholder text. */
 .input-chanfrein::placeholder {
   color: #888888;
 }
 
-/* --- LE BOUTON REPREND TON STYLE --- */
+/* --- JOIN BUTTON --- */
 .joinButton {
   display: block;
   width: 100%;
@@ -126,20 +132,28 @@ const joinRoom = () => {
   cursor: pointer;
 
   clip-path: polygon(
-    10px 0%, calc(100% - 10px) 0%, 100% 10px,
-    100% calc(100% - 10px), calc(100% - 10px) 100%,
-    10px 100%, 0% calc(100% - 10px), 0% 10px
+    10px 0%,
+    calc(100% - 10px) 0%,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0% calc(100% - 10px),
+    0% 10px
   );
 
-  transition: transform 0.1s ease, background-color 0.2s, color 0.2s;
+  transition:
+    transform 0.1s ease,
+    background-color 0.2s,
+    color 0.2s;
 }
 
-/* Survol du bouton actif */
+/* Hover state of the enabled button. */
 .shadow-container:not(.disabled-shadow):hover .joinButton {
   background-color: #ffffff;
 }
 
-/* --- STYLE SI DÉSACTIVÉ (Champs vides) --- */
+/* --- DISABLED STATE, when a field is still empty --- */
 .joinButton:disabled {
   background-color: #555555;
   color: #888888;
@@ -147,6 +161,6 @@ const joinRoom = () => {
 }
 
 .disabled-shadow {
-  filter: drop-shadow(0 4px 0 #222222); /* Ombre grisée quand c'est bloqué */
+  filter: drop-shadow(0 4px 0 #222222); /* Greyed-out shadow while blocked. */
 }
 </style>

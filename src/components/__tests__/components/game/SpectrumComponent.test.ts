@@ -1,10 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { socket } from '@/socket.ts'
 
 vi.mock('@/socket.ts', () => ({

@@ -14,7 +14,7 @@ vi.mock('../../assets/gamesManager', () => ({
   startGame: vi.fn(),
   handleBoardUpdate: vi.fn(),
   handleMorePiecesRequest: vi.fn(),
-  sendPenality: vi.fn(),
+  sendPenalty: vi.fn(),
 }))
 
 vi.mock('./socket', () => ({
@@ -37,7 +37,6 @@ vi.mock('node:os', async (importOriginal) => {
 })
 
 describe('Socket Server', () => {
-
   describe('getLocalIpAddress()', () => {
     it('should return the first non-internal IPv4 address found', () => {
       mockNetworkInterfaces.mockReturnValue({
@@ -129,12 +128,11 @@ describe('Socket Server', () => {
     })
 
     it('should call changeTeam when client changed team', () => {
-      const data = { room: 'roomA', name: 'Alex' }
-      clientSocket.emit('change_team', data)
+      clientSocket.emit('change_team', { room: 'roomA' })
 
       return new Promise<void>((resolve) => {
         setTimeout(() => {
-          expect(gamesManager.changeTeam).toHaveBeenCalledWith('roomA', 'Alex', expect.any(Object))
+          expect(gamesManager.changeTeam).toHaveBeenCalledWith('roomA', expect.any(Object))
           resolve()
         }, 50)
       })
@@ -187,13 +185,13 @@ describe('Socket Server', () => {
       })
     })
 
-    it('should call sendPenality when client emits "clearLines"', () => {
+    it('should call sendPenalty when client emits "clearLines"', () => {
       const linesCleared = 3
       clientSocket.emit('clearLines', linesCleared)
 
       return new Promise<void>((resolve) => {
         setTimeout(() => {
-          expect(gamesManager.sendPenality).toHaveBeenCalledWith(
+          expect(gamesManager.sendPenalty).toHaveBeenCalledWith(
             linesCleared,
             expect.any(Object), // The socket instance
           )

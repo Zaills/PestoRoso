@@ -20,7 +20,6 @@ vi.mock('@/socket.ts', () => ({
 
 import { socket } from '@/socket.ts'
 
-
 describe('tetrisEngine', () => {
   beforeAll(() => {
     vi.clearAllMocks()
@@ -78,25 +77,57 @@ describe('tetrisEngine', () => {
   describe('checkCollision', () => {
     it('should return false if there is no collision', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = { matrix: [[1, 1], [1, 1]], x: 4, y: 0, pieceId: 4 }
+      const piece: PieceState = {
+        matrix: [
+          [1, 1],
+          [1, 1],
+        ],
+        x: 4,
+        y: 0,
+        pieceId: 4,
+      }
       expect(checkCollision(board, piece, 0, 0)).toBe(false)
     })
 
     it('should return true if piece goes out of left bounds', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = { matrix: [[1, 1], [1, 1]], x: 0, y: 0, pieceId: 4 }
+      const piece: PieceState = {
+        matrix: [
+          [1, 1],
+          [1, 1],
+        ],
+        x: 0,
+        y: 0,
+        pieceId: 4,
+      }
       expect(checkCollision(board, piece, -1, 0)).toBe(true)
     })
 
     it('should return true if piece goes out of right bounds', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = { matrix: [[1, 1], [1, 1]], x: 9, y: 0, pieceId: 4 }
+      const piece: PieceState = {
+        matrix: [
+          [1, 1],
+          [1, 1],
+        ],
+        x: 9,
+        y: 0,
+        pieceId: 4,
+      }
       expect(checkCollision(board, piece, 0, 0)).toBe(true)
     })
 
     it('should return true if piece hits the bottom', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = { matrix: [[1, 1], [1, 1]], x: 4, y: 20, pieceId: 4 }
+      const piece: PieceState = {
+        matrix: [
+          [1, 1],
+          [1, 1],
+        ],
+        x: 4,
+        y: 20,
+        pieceId: 4,
+      }
       expect(checkCollision(board, piece, 0, 1)).toBe(true)
     })
 
@@ -125,7 +156,6 @@ describe('tetrisEngine', () => {
 
       expect(checkCollision(board, piece, 0, 0)).toBe(false)
     })
-
   })
 
   describe('lockPiece', () => {
