@@ -8,13 +8,21 @@ const playerList = ref([])
 const spectatorList = ref([])
 const router = useRouter()
 
-// The round already started (or the room is unreachable): send the player home.
 function onRoomDenied() {
   socket.disconnect()
   router.push('/')
+  alert('error: room access denied')
 }
 
+const URL = `http://${window.location.hostname}:3000/api/status`
+
 onMounted(() => {
+  fetch(URL).catch(() => {
+    socket.disconnect()
+    router.push('/')
+    alert('error: server inaccessible, contact support')
+  })
+
   socket.on('room_denied', onRoomDenied)
   socket.connect()
   const url = window.location.href
