@@ -22,9 +22,10 @@ const joinRoom = () => {
   <div class="login-container">
     <span class="shadow-container disabled-shadow">
       <input
-        v-model="name"
+        v-model.trim="name"
         class="input-chanfrein"
         placeholder="NAME"
+        minlength="2"
         maxlength="16"
         @keyup.enter="focusRoom"
       />
@@ -33,9 +34,10 @@ const joinRoom = () => {
     <span class="shadow-container disabled-shadow">
       <input
         ref="roomInput"
-        v-model="room"
+        v-model.trim="room"
         class="input-chanfrein"
         placeholder="ROOM"
+        minlength="2"
         maxlength="16"
         @keyup.enter="joinRoom"
       />
@@ -53,7 +55,6 @@ const joinRoom = () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
 
-/* Column layout for the name/room inputs and the join button. */
 .login-container {
   display: flex;
   flex-direction: column;
@@ -88,7 +89,7 @@ const joinRoom = () => {
   font-family: 'Titan One', sans-serif;
   font-size: 1.6rem;
   padding: 12px 20px;
-  background-color: #333333; /* Dark fill, to contrast with the white button. */
+  background-color: #333333;
   color: #ffffff;
 
   clip-path: polygon(
