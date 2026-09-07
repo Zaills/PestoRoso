@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev-and-server": "npm run dev & npm run --prefix ./server dev-Server ./server",
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.0",
-    "@types/node": "^24.11.0",
+    "@types/node": "^24.13.2",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.1.4",
     "@vitest/eslint-plugin": "^1.6.9",

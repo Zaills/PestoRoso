@@ -1,42 +1,55 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import AppBackground from '@/components/AppBackgroud.vue'
+import AppBackground from '@/components/AppBackground.vue'
+import TitleComponent from '@/components/home/TitleComponent.vue'
 </script>
 
 <template>
-  <header>
-    <AppBackground />
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
+  <!-- The background sits at the top level so it covers the whole application. -->
+  <AppBackground />
 
-  <RouterView />
+  <div class="app-layout">
+    <header class="main-header">
+      <TitleComponent />
+    </header>
+
+    <!-- Holds the current page: connection form, waiting room or game. -->
+    <main class="main-content">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+/* Main container, sized to the viewport so the page never scrolls. */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 
-nav {
+  height: 100vh;
   width: 100%;
-  font-size: 12px;
+  overflow: hidden;
+
+  padding: 40px 20px;
+  box-sizing: border-box; /* Required so the padding stays inside the 100vh. */
+  position: relative;
+  z-index: 2;
+}
+
+.main-header {
   text-align: center;
-  margin-top: 2rem;
+  margin-bottom: 30px; /* Fixed gap between the RED TETRIS title and the page content. */
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
+/* Dynamic content area rendered by the RouterView. */
+.main-content {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

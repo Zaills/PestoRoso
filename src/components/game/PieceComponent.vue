@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import jsonShape from '@/assets/tetriminoShape.json'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
+import type { TetriminoName } from '@/game/tetrisEngine'
 import { computed } from 'vue'
 
 const props = defineProps<{
-  type: 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L'
+  type: TetriminoName
   cellSize: number
   x: number
   y: number
   r: number
 }>()
 
+/** Quarter turn clockwise: transpose the matrix, then mirror each row. */
+function rotateClockwise(shape: number[][]): number[][] {
+  const firstRow = shape[0] ?? []
+  return firstRow.map((_, column) => shape.map((row) => row[column] ?? 0).reverse())
+}
+
 const Shape = computed(() => {
   let shape: number[][] = jsonShape[props.type]
   for (let i = 0; i < props.r; i++) {
-    shape = shape[0].map((val, index) => shape.map((row) => row[index]).reverse())
+    shape = rotateClockwise(shape)
   }
   return shape
 })
@@ -37,5 +44,3 @@ const startY = computed(() => Math.max(props.y - offset.value, 0))
     </template>
   </template>
 </template>
-
-<style scoped></style>
