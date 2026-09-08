@@ -49,6 +49,7 @@ const {
   winGame,
   addPieces,
   penaltyLine,
+  resyncBoard,
   moveLeft,
   moveRight,
   softDrop,
@@ -78,6 +79,11 @@ function onPenalty(lines: number) {
   penaltyLine(lines)
 }
 
+// The server refused a placement, or our board drifted from its own: its version wins.
+function onResync(payload: { board: number[][]; pieceId: PieceId | null; penaltyCount: number }) {
+  resyncBoard(payload)
+}
+
 function onStart(roster: RosterEntry[]) {
   winnerId.value = null
   winnerName.value = ''
@@ -97,6 +103,7 @@ onMounted(() => {
   socket.on('pieces_batch', onPiecesBatch)
   socket.on('more_pieces', onMorePieces)
   socket.on('get_penalty', onPenalty)
+  socket.on('board_resync', onResync)
   socket.on('all_player', onStart)
   socket.on('game_end', onGameEnd)
 })
@@ -105,6 +112,7 @@ onUnmounted(() => {
   socket.off('pieces_batch', onPiecesBatch)
   socket.off('more_pieces', onMorePieces)
   socket.off('get_penalty', onPenalty)
+  socket.off('board_resync', onResync)
   socket.off('all_player', onStart)
   socket.off('game_end', onGameEnd)
 })

@@ -4,18 +4,28 @@ import {
   createEmptyBoard,
   spawnPiece,
   checkCollision,
-  rotateMatrix,
+  getPieceMatrix,
   lockPiece,
   clearLines,
   getGhostY,
-  COLS,
-  PENALTY_ID,
+  applyPenaltyLines,
+  scoreForLines,
+  levelForLines,
+  ROTATIONS,
   PIECE_NAMES,
   type PieceState,
   type PieceName,
   type PieceId,
 } from './tetrisEngine'
 
+/**
+ * Local game state.
+ *
+ * Everything is computed here so play stays instant, but the server is the authority:
+ * it replays each placement on its own board and owns the penalties, the score and
+ * the elimination. This composable only reports what the player did — it never
+ * reports a result the server could not check.
+ */
 export function useGameState() {
   const board = ref<number[][]>(createEmptyBoard())
   const currentPiece = ref<PieceState | null>(null)
@@ -29,6 +39,9 @@ export function useGameState() {
   const isWinner = ref(false)
   // True once the piece rests on the stack but has not been locked yet.
   const isLanded = ref(false)
+  // Penalty lines absorbed since the start of the round. Sent with every placement so
+  // the server can apply the same penalties in the same order before validating it.
+  const penaltiesApplied = ref(0)
 
   let gravityInterval: ReturnType<typeof setInterval> | null = null
 
@@ -52,6 +65,7 @@ export function useGameState() {
     isGameOver.value = false
     isWinner.value = false
     isLanded.value = false
+    penaltiesApplied.value = 0
     heldPieceId.value = null
     canHold.value = true
     currentPiece.value = null
@@ -64,32 +78,37 @@ export function useGameState() {
   function penaltyLine(lines: number) {
     if (lines <= 0 || isGameOver.value || isWinner.value) return
 
-    for (let i = 0; i < lines; i++) {
-      const remainingBoard = board.value.slice(1)
-      const row = new Array(COLS).fill(PENALTY_ID)
-
-      board.value = [...remainingBoard, row]
-      while (currentPiece.value && checkCollision(board.value, currentPiece.value, 0, 0)) {
-        currentPiece.value = {
-          ...currentPiece.value,
-          y: currentPiece.value.y - 1,
-        }
+    penaltiesApplied.value += lines
+    board.value = applyPenaltyLines(board.value, lines)
+    while (currentPiece.value && checkCollision(board.value, currentPiece.value, 0, 0)) {
+      currentPiece.value = {
+        ...currentPiece.value,
+        y: currentPiece.value.y - 1,
       }
     }
   }
 
+  /** Adopts the server board after it rejected a placement or detected a divergence. */
+  function resyncBoard(payload: {
+    board: number[][]
+    pieceId: PieceId | null
+    penaltyCount: number
+  }) {
+    board.value = payload.board.map((row) => [...row])
+    penaltiesApplied.value = payload.penaltyCount
+    currentPiece.value = payload.pieceId === null ? null : spawnPiece(payload.pieceId)
+    isLanded.value = false
+  }
+
   function spawnNextPiece() {
-    // Refill the queue well before it runs dry, so gravity is never starved.
-    if (pieceQueue.value.length < 14) {
-      socket.emit('request_more_pieces')
-    }
     const pieceId = pieceQueue.value.shift()
     if (pieceId === undefined) return
     const piece = spawnPiece(pieceId as PieceId)
     if (checkCollision(board.value, piece, 0, 0)) {
+      // Shown right away so the player sees the result of their own move. The server
+      // reaches the same conclusion on its own board and is the one that eliminates.
       isGameOver.value = true
       stopGravity()
-      socket.emit('board_update', { board: board.value, score: score.value, isGameOver: true })
       return
     }
     currentPiece.value = piece
@@ -103,19 +122,29 @@ export function useGameState() {
 
   function lockCurrentPiece() {
     if (!currentPiece.value) return
-    const locked = lockPiece(board.value, currentPiece.value)
+    const piece = currentPiece.value
+
+    // Four numbers instead of a 22 x 10 matrix: the server rebuilds the shape from
+    // the piece id and rotation, so a tampered client cannot invent a placement.
+    socket.emit('piece_locked', {
+      pieceId: piece.pieceId,
+      x: piece.x,
+      y: piece.y,
+      rotation: piece.rotation,
+      penaltyCount: penaltiesApplied.value,
+    })
+
+    const locked = lockPiece(board.value, piece)
     const { newBoard, linesCleared } = clearLines(locked)
     board.value = newBoard
     updateScore(linesCleared)
-    socket.emit('board_update', { board: board.value, score: score.value, isGameOver: false })
     spawnNextPiece()
   }
 
   function updateScore(cleared: number) {
-    const points = [0, 100, 300, 500, 800]
     linesCount.value += cleared
-    score.value += (points[cleared] ?? 0) * level.value
-    level.value = Math.floor(linesCount.value / 10) + 1
+    score.value += scoreForLines(cleared, level.value)
+    level.value = levelForLines(linesCount.value)
   }
 
   function gravity() {
@@ -181,17 +210,23 @@ export function useGameState() {
 
   function rotate() {
     if (!currentPiece.value || isGameOver.value || isWinner.value) return
-    const rotated = rotateMatrix(currentPiece.value.matrix)
-    if (!checkCollision(board.value, currentPiece.value, 0, 0, rotated)) {
-      currentPiece.value = { ...currentPiece.value, matrix: rotated }
+    const piece = currentPiece.value
+    // The rotation index is what travels to the server, so it is the source of truth:
+    // the matrix is always rebuilt from it rather than turned in place.
+    const nextRotation = (piece.rotation + 1) % ROTATIONS
+    const rotated = getPieceMatrix(piece.pieceId, nextRotation)
+
+    if (!checkCollision(board.value, piece, 0, 0, rotated)) {
+      currentPiece.value = { ...piece, matrix: rotated, rotation: nextRotation }
       return
     }
     for (const dx of [-1, 1, -2, 2]) {
-      if (!checkCollision(board.value, currentPiece.value, dx, 0, rotated)) {
+      if (!checkCollision(board.value, piece, dx, 0, rotated)) {
         currentPiece.value = {
-          ...currentPiece.value,
-          x: currentPiece.value.x + dx,
+          ...piece,
+          x: piece.x + dx,
           matrix: rotated,
+          rotation: nextRotation,
         }
         return
       }
@@ -208,7 +243,9 @@ export function useGameState() {
 
   function hold() {
     if (!currentPiece.value || isGameOver.value || isWinner.value || !canHold.value) return
-    canHold.value = false
+    // The server mirrors the same swap, otherwise it would expect the wrong piece
+    // on the next placement.
+    socket.emit('piece_held')
     const currentId = currentPiece.value.pieceId
     if (heldPieceId.value === null) {
       heldPieceId.value = currentId
@@ -219,6 +256,10 @@ export function useGameState() {
       currentPiece.value = spawnPiece(swapId)
       isLanded.value = false
     }
+    // Set last: filling an empty hold slot goes through spawnNextPiece(), which grants
+    // a fresh hold. Clearing the flag afterwards is what makes the once-per-piece rule
+    // actually hold, and keeps the server mirror in step.
+    canHold.value = false
   }
 
   // Last player standing: the game stops and the board freezes on the win screen.
@@ -245,6 +286,7 @@ export function useGameState() {
     winGame,
     addPieces,
     penaltyLine,
+    resyncBoard,
     moveLeft,
     moveRight,
     softDrop,

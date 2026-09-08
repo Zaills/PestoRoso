@@ -5,9 +5,8 @@ import {
   leaveRoom,
   changeTeam,
   startGame,
-  handleBoardUpdate,
-  handleMorePiecesRequest,
-  sendPenalty,
+  handlePieceLocked,
+  handlePieceHeld,
 } from '../assets/gamesManager'
 import os from 'node:os'
 
@@ -15,9 +14,15 @@ interface ClientToServerEvents {
   join_room: (payload: { room: string; name: string }) => void
   change_team: (payload: { room: string }) => void
   start_game: (payload: { room: string; name: string }) => void
-  board_update: (data: { board: number[][]; score: number; isGameOver: boolean }) => void
-  request_more_pieces: () => void
-  clearLines: (lines: number) => void
+  /** Where the player came to rest: the server rebuilds the shape and validates it. */
+  piece_locked: (data: {
+    pieceId: number
+    x: number
+    y: number
+    rotation: number
+    penaltyCount: number
+  }) => void
+  piece_held: () => void
 }
 
 interface ServerToClientEvents {
@@ -36,6 +41,12 @@ interface ServerToClientEvents {
   all_player: (players: { id: number; name: string }[]) => void
   game_end: (payload: { winnerId: number | null; winnerName: string | null }) => void
   room_denied: (reason: string) => void
+  /** Authoritative board pushed back after a rejected or diverging placement. */
+  board_resync: (payload: {
+    board: number[][]
+    pieceId: number | null
+    penaltyCount: number
+  }) => void
   role_update: (role: 'player' | 'spectator') => void
   host_update: (isHost: boolean) => void
 }
@@ -93,16 +104,12 @@ export const initSocket = (httpServer: HttpServer) => {
       startGame(room, name, socket)
     })
 
-    socket.on('board_update', (data) => {
-      handleBoardUpdate(socket, data)
+    socket.on('piece_locked', (data) => {
+      handlePieceLocked(socket, data)
     })
 
-    socket.on('request_more_pieces', () => {
-      handleMorePiecesRequest(socket)
-    })
-
-    socket.on('clearLines', (lines: number) => {
-      sendPenalty(lines, socket)
+    socket.on('piece_held', () => {
+      handlePieceHeld(socket)
     })
   })
 
