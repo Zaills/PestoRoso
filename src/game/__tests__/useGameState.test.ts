@@ -27,6 +27,7 @@ vi.mock('../tetrisEngine', () => ({
   getGhostY: vi.fn(() => 18),
   scoreForLines: vi.fn(() => 0),
   levelForLines: vi.fn(() => 0),
+  isBoardOverflowed: vi.fn(() => false),
   COLS: 10,
   PENALTY_ID: 8,
   PIECE_NAMES: ['I', 'J', 'L', 'O', 'S', 'T', 'Z'],
