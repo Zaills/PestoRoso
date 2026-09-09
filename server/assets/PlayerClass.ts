@@ -5,8 +5,6 @@ import {
   clearLines,
   createEmptyBoard, isValidPlacement,
   levelForLines,
-  PieceId,
-  PieceState,
   scoreForLines,
   spawnPiece,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -14,6 +12,9 @@ import {
 } from '../../shared/tetrisEngine'
 import { Game } from './GameClass'
 import { checkForWinner } from './gamesManager'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import { Piece, PieceId } from '../../shared/PieceClass'
 
 const MAX_VIOLATIONS = 5
 
@@ -123,7 +124,7 @@ export class Player {
     this.board = applyPenaltyLines(this.board, lines)
   }
 
-  isValidPlacement(piece: PieceState): boolean {
+  isValidPlacement(piece: Piece): boolean {
     return isValidPlacement(this.board, piece)
   }
 

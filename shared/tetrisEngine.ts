@@ -1,3 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import { Piece, type PieceId } from './PieceClass.ts'
+
 /**
  * Pure Tetris engine, shared by the browser and the game server.
  *
@@ -20,7 +24,6 @@ export const PENALTY_ID = 8
 /** A piece returns to its initial shape after four quarter turns. */
 export const ROTATIONS = 4
 
-export type PieceId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 export const PIECES: Record<PieceId, number[][]> = {
   1: [
@@ -75,14 +78,14 @@ export const PIECE_NAMES: Record<PieceId, PieceName> = {
   8: 'penalty',
 }
 
-export interface PieceState {
-  matrix: number[][]
-  x: number
-  y: number
-  pieceId: PieceId
-  /** Quarter turns applied to the base shape, kept in sync with `matrix`. */
-  rotation: number
-}
+// export interface PieceState {
+//   matrix: number[][]
+//   x: number
+//   y: number
+//   pieceId: PieceId
+//   /** Quarter turns applied to the base shape, kept in sync with `matrix`. */
+//   rotation: number
+// }
 
 /** Points awarded for clearing 0 to 4 lines at once, before the level multiplier. */
 const LINE_POINTS = [0, 100, 300, 500, 800]
@@ -118,21 +121,21 @@ export function getPieceMatrix(pieceId: PieceId, rotation: number): number[][] {
   return matrix
 }
 
-export function spawnPiece(pieceId: PieceId, rotation = 0): PieceState {
+export function spawnPiece(pieceId: PieceId, rotation = 0): Piece {
   const matrix = getPieceMatrix(pieceId, rotation)
   const matrixWidth = matrix[0]?.length ?? 0
-  return {
-    matrix,
-    x: Math.floor(COLS / 2) - Math.floor(matrixWidth / 2),
-    y: 0,
+  return new Piece(
     pieceId,
+    Math.floor(COLS / 2) - Math.floor(matrixWidth / 2),
+    0,
     rotation,
-  }
+    matrix
+  )
 }
 
 export function checkCollision(
   board: number[][],
-  piece: PieceState,
+  piece: Piece,
   dx: number,
   dy: number,
   rotatedMatrix?: number[][],
@@ -152,7 +155,7 @@ export function checkCollision(
   return false
 }
 
-export function lockPiece(board: number[][], piece: PieceState): number[][] {
+export function lockPiece(board: number[][], piece: Piece): number[][] {
   const newBoard = board.map((row) => [...row])
 
   for (const [y, row] of piece.matrix.entries()) {
@@ -180,7 +183,7 @@ export function clearLines(board: number[][]): { newBoard: number[][]; linesClea
   return { newBoard: [...empty, ...kept], linesCleared }
 }
 
-export function getGhostY(board: number[][], piece: PieceState): number {
+export function getGhostY(board: number[][], piece: Piece): number {
   let ghostY = piece.y
   while (!checkCollision(board, { ...piece, y: ghostY }, 0, 1)) {
     ghostY++
@@ -201,7 +204,7 @@ export function applyPenaltyLines(board: number[][], lines: number): number[][] 
  * Whether a piece could legitimately have been locked at this exact spot: it must
  * overlap nothing, and it must rest on the stack rather than float above it.
  */
-export function isValidPlacement(board: number[][], piece: PieceState): boolean {
+export function isValidPlacement(board: number[][], piece: Piece): boolean {
   if (!Number.isInteger(piece.x) || !Number.isInteger(piece.y)) return false
   if (checkCollision(board, piece, 0, 0)) return false
   return checkCollision(board, piece, 0, 1)

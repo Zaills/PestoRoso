@@ -5,13 +5,15 @@ import {
   getPieceMatrix,
   lockPiece,
   spawnPiece,
-  type PieceState,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
 } from '../../shared/tetrisEngine'
 
 import { Game } from './GameClass'
 import { Player } from './PlayerClass'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import { Piece } from '../../shared/PieceClass'
 
 export { createEmptyBoard }
 
@@ -85,13 +87,14 @@ export function handlePieceLocked(
     return
   }
 
-  const piece: PieceState = {
-    pieceId: player.currentPieceId,
-    x: data.x,
-    y: data.y,
-    rotation: data.rotation,
-    matrix: getPieceMatrix(player.currentPieceId, data.rotation),
-  }
+  const piece = new Piece(
+    player.currentPieceId,
+    data.x,
+    data.y,
+    data.rotation,
+    getPieceMatrix(player.currentPieceId, data.rotation)
+  )
+
   if (!player.isValidPlacement(piece)) {
     player.rejectPlacement(room)
     return
