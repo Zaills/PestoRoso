@@ -154,6 +154,10 @@ export function applyPenaltyLines(board: number[][], lines: number): number[][] 
   return next
 }
 
+export function isBoardOverflowed(board: number[][]): boolean {
+  return board.slice(0, BUFFER_ROWS).some((row) => row.some((cell) => cell !== 0))
+}
+
 /**
  * Whether a piece could legitimately have been locked at this exact spot: it must
  * overlap nothing, and it must rest on the stack rather than float above it.

@@ -3,7 +3,7 @@ import {
   applyPenaltyLines,
   checkCollision,
   clearLines,
-  createEmptyBoard, getPieceMatrix, isValidPlacement,
+  createEmptyBoard, getPieceMatrix, isBoardOverflowed, isValidPlacement,
   levelForLines, lockPiece,
   scoreForLines,
   spawnPiece,
@@ -147,7 +147,12 @@ export class Player {
 
     if (linesCleared > 1) game.sendPenaltyToOpponents(this, linesCleared - 1)
 
-    this.advanceToNextPiece(this._socket, game, room)
+    if (isBoardOverflowed(this._board)) {
+      this._isGameOver = true
+    } else {
+      this.advanceToNextPiece(this._socket, game, room)
+    }
+
     this.broadcastBoard()
     if (this._isGameOver) checkForWinner(room)
   }

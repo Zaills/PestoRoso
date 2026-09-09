@@ -47,13 +47,6 @@ export function checkForWinner(room: string) {
   gameRoom.checkForWinner()
 }
 
-/**
- * Replays one placement reported by a client.
- *
- * The client is only allowed to say *where* it put the piece; which piece it was comes
- * from the room sequence, and the resulting lines, penalties, score and elimination are
- * all computed here.
- */
 export function handlePieceLocked(
   socket: Socket,
   data: { pieceId: number; x: number; y: number; rotation: number; penaltyCount: number },

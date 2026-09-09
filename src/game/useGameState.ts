@@ -7,6 +7,7 @@ import {
   createEmptyBoard,
   getGhostY,
   getPieceMatrix,
+  isBoardOverflowed,
   levelForLines,
   lockPiece,
   PIECE_NAMES,
@@ -100,15 +101,21 @@ export function useGameState() {
     isLanded.value = false
   }
 
+  /**
+   * Shown right away so the player sees the result of their own move. The server
+   * reaches the same conclusion on its own board and is the one that eliminates.
+   */
+  function triggerGameOver() {
+    isGameOver.value = true
+    stopGravity()
+  }
+
   function spawnNextPiece() {
     const pieceId = pieceQueue.value.shift()
     if (pieceId === undefined) return
     const piece = spawnPiece(pieceId as PieceId)
     if (checkCollision(board.value, piece, 0, 0)) {
-      // Shown right away so the player sees the result of their own move. The server
-      // reaches the same conclusion on its own board and is the one that eliminates.
-      isGameOver.value = true
-      stopGravity()
+      triggerGameOver()
       return
     }
     currentPiece.value = piece
@@ -138,6 +145,16 @@ export function useGameState() {
     const { newBoard, linesCleared } = clearLines(locked)
     board.value = newBoard
     updateScore(linesCleared)
+
+    // The stack now reaches above the 20 visible lines: the round is lost here rather
+    // than one piece later, when the next spawn would have collided.
+    if (isBoardOverflowed(board.value)) {
+      currentPiece.value = null
+      isLanded.value = false
+      triggerGameOver()
+      return
+    }
+
     spawnNextPiece()
   }
 
