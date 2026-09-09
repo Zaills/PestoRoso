@@ -1,4 +1,4 @@
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { socket } from '@/socket'
 import {
   applyPenaltyLines,
@@ -257,7 +257,7 @@ export function useGameState() {
       isLanded.value = false
     }
     // Set last: filling an empty hold slot goes through spawnNextPiece(), which grants
-    // a fresh hold. Clearing the flag afterwards is what makes the once-per-piece rule
+    // a fresh hold. Clearing the flag afterward is what makes the once-per-piece rule
     // actually hold, and keeps the server mirror in step.
     canHold.value = false
   }
@@ -269,7 +269,7 @@ export function useGameState() {
     stopGravity()
   }
 
-  onUnmounted(stopGravity)
+  onScopeDispose(stopGravity)
 
   return {
     board,

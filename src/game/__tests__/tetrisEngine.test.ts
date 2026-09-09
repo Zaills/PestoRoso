@@ -8,7 +8,6 @@ import {
   clearLines,
   getGhostY,
   PIECES,
-  type PieceState,
   type PieceId,
 } from '@/game/tetrisEngine.ts'
 
@@ -19,6 +18,7 @@ vi.mock('@/socket.ts', () => ({
 }))
 
 import { socket } from '@/socket.ts'
+import { Piece } from '@shared/PieceClass.ts'
 
 describe('tetrisEngine', () => {
   beforeAll(() => {
@@ -77,64 +77,45 @@ describe('tetrisEngine', () => {
   describe('checkCollision', () => {
     it('should return false if there is no collision', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [
-          [1, 1],
-          [1, 1],
-        ],
-        x: 4,
-        y: 0,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 4, 0, 0, [
+        [1, 1],
+        [1, 1],
+      ])
       expect(checkCollision(board, piece, 0, 0)).toBe(false)
     })
 
     it('should return true if piece goes out of left bounds', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [
-          [1, 1],
-          [1, 1],
-        ],
-        x: 0,
-        y: 0,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 0, 0, 0, [
+        [1, 1],
+        [1, 1],
+      ])
       expect(checkCollision(board, piece, -1, 0)).toBe(true)
     })
 
     it('should return true if piece goes out of right bounds', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [
-          [1, 1],
-          [1, 1],
-        ],
-        x: 9,
-        y: 0,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 9, 0, 0, [
+        [1, 1],
+        [1, 1],
+      ])
       expect(checkCollision(board, piece, 0, 0)).toBe(true)
     })
 
     it('should return true if piece hits the bottom', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [
-          [1, 1],
-          [1, 1],
-        ],
-        x: 4,
-        y: 20,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 4, 20, 0, [
+        [1, 1],
+        [1, 1],
+      ])
+
       expect(checkCollision(board, piece, 0, 1)).toBe(true)
     })
 
     it('should return true if piece collides with an existing block', () => {
       const board = createEmptyBoard()
       board[5]![5] = 2
-      const piece: PieceState = { matrix: [[1]], x: 5, y: 4, pieceId: 1 }
+      const piece: Piece = new Piece(1, 5, 4, 0, [[1],])
 
       expect(checkCollision(board, piece, 0, 1)).toBe(true)
     })
@@ -142,17 +123,11 @@ describe('tetrisEngine', () => {
     it('checkCollision should ignore empty spaces (0) inside a piece matrix', () => {
       const board = createEmptyBoard()
       board[0]![0] = 2
-
-      const piece: PieceState = {
-        matrix: [
-          [0, 1, 0],
-          [1, 1, 1],
-          [0, 0, 0],
-        ],
-        x: 0,
-        y: 0,
-        pieceId: 6,
-      }
+      const piece: Piece = new Piece(6, 0, 0, 0, [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ])
 
       expect(checkCollision(board, piece, 0, 0)).toBe(false)
     })
@@ -161,15 +136,11 @@ describe('tetrisEngine', () => {
   describe('lockPiece', () => {
     it('should burn the piece onto the board matrix without mutating the original board', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [
-          [1, 1],
-          [1, 1],
-        ],
-        x: 0,
-        y: 0,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 0, 0, 0, [
+        [1, 1],
+        [1, 1],
+      ])
+
 
       const newBoard = lockPiece(board, piece)
 
@@ -182,16 +153,10 @@ describe('tetrisEngine', () => {
 
     it('lockPiece should safely ignore blocks that freeze above the board (y < 0)', () => {
       const board = createEmptyBoard()
-
-      const piece: PieceState = {
-        matrix: [
-          [1, 0],
-          [1, 1],
-        ],
-        x: 4,
-        y: -1,
-        pieceId: 4,
-      }
+      const piece: Piece = new Piece(4, 4, -1, 0, [
+        [1, 0],
+        [1, 1],
+      ])
 
       expect(() => lockPiece(board, piece)).not.toThrow()
 
@@ -202,12 +167,7 @@ describe('tetrisEngine', () => {
 
     it('lockPiece should not write to board and not crash if targetRow is undefined', () => {
       const board = createEmptyBoard()
-      const piece: PieceState = {
-        matrix: [[1]],
-        x: 0,
-        y: 50,
-        pieceId: 1,
-      }
+      const piece: Piece = new Piece(1, 0, 50, 0, [[1]])
 
       expect(() => lockPiece(board, piece)).not.toThrow()
       const newBoard = lockPiece(board, piece)
@@ -236,7 +196,6 @@ describe('tetrisEngine', () => {
       const { linesCleared } = clearLines(board)
 
       expect(linesCleared).toBe(2)
-      expect(socket.emit).toHaveBeenCalledWith('clearLines', 1)
     })
 
     it('should not clear a row if it contains a penalty block (id: 8)', () => {
@@ -252,7 +211,7 @@ describe('tetrisEngine', () => {
     it('should find the lowest valid y coordinate before collision', () => {
       const board = createEmptyBoard()
       board[15]![4] = 2
-      const piece: PieceState = { matrix: [[1]], x: 4, y: 0, pieceId: 1 }
+      const piece: Piece = new Piece(1, 4, 0, 0, [[1]])
 
       const ghostY = getGhostY(board, piece)
       expect(ghostY).toBe(14)

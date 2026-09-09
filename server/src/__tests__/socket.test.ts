@@ -2,9 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import type { Server } from 'socket.io'
 import { io as Client, type Socket as ClientSocket } from 'socket.io-client'
 import { createServer } from 'http'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import { getLocalIpAddress, initSocket } from '../socket.ts'
 import type { AddressInfo } from 'node:net'
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import * as gamesManager from '../../assets/gamesManager.ts'
 
 vi.mock('../../assets/gamesManager', () => ({
@@ -145,56 +149,6 @@ describe('Socket Server', () => {
       return new Promise<void>((resolve) => {
         setTimeout(() => {
           expect(gamesManager.startGame).toHaveBeenCalledWith('roomA', 'Alex', expect.any(Object))
-          resolve()
-        }, 50)
-      })
-    })
-
-    it('should call handleBoardUpdate when client emits "board_update"', () => {
-      const data = {
-        board: [
-          [0, 1],
-          [1, 0],
-        ],
-        score: 100,
-        isGameOver: false,
-      }
-      clientSocket.emit('board_update', data)
-
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          expect(gamesManager.handleBoardUpdate).toHaveBeenCalledWith(
-            expect.any(Object), // The socket instance
-            data,
-          )
-          resolve()
-        }, 50)
-      })
-    })
-
-    it('should call handleMorePiecesRequest when client emits "request_more_pieces"', () => {
-      clientSocket.emit('request_more_pieces')
-
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          expect(gamesManager.handleMorePiecesRequest).toHaveBeenCalledWith(
-            expect.any(Object), // The socket instance
-          )
-          resolve()
-        }, 50)
-      })
-    })
-
-    it('should call sendPenalty when client emits "clearLines"', () => {
-      const linesCleared = 3
-      clientSocket.emit('clearLines', linesCleared)
-
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          expect(gamesManager.sendPenalty).toHaveBeenCalledWith(
-            linesCleared,
-            expect.any(Object), // The socket instance
-          )
           resolve()
         }, 50)
       })

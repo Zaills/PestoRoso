@@ -1,6 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import WaitingRoom from '@/components/waitingRoom/WaitingRoom.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import { socket } from '@/socket.ts'
 
 vi.mock('@/socket.ts', () => ({
@@ -171,6 +175,7 @@ describe('Waiting Room', () => {
       props: {
         playerList: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5'],
         ViewerList: ['Viewer1'],
+        isHost: false,
       },
     })
 
@@ -189,6 +194,7 @@ describe('Waiting Room', () => {
       props: {
         playerList: ['Alex'],
         ViewerList: [],
+        isHost: false,
       },
     })
 

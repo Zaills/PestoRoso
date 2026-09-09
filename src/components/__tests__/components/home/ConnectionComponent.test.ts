@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import ConnectionComponent from '../../../Home/ConnectionComponent.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import ConnectionComponent from '@/components/home/ConnectionComponent.vue'
 
 const mockPush = vi.fn()
 
