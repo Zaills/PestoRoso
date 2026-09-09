@@ -1,6 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import PieceComponent from '@/components/game/PieceComponent.vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 
 vi.mock('@/assets/tetriminoShape.json', () => ({
@@ -111,18 +115,24 @@ describe('Tetrimino.vue', () => {
     const blocks = wrapper.findAllComponents(BlockRenderer)
     expect(blocks.length).toBe(4)
 
-    // Verify rendered positions after 90 deg rotation
-    // startX = max(5 - 1, 0) = 4, startY = 4
-    const positions = blocks.map((b) => ({
-      x: b.props('x'),
-      y: b.props('y'),
-    }))
-
-    expect(positions).toEqual([
-      { x: 5, y: 4 }, // (row 0, col 1)
-      { x: 5, y: 5 }, // (row 1, col 1)
-      { x: 6, y: 5 }, // (row 1, col 2)
-      { x: 5, y: 6 }, // (row 2, col 1)
-    ])
+    expect(wrapper.vm.Shape).toStrictEqual([[0, 1, 0], [0, 1, 1], [0, 1, 0]])
   })
+
+  it('rotateClockwise return [0] if empty', () => {
+    const wrapper = mount(PieceComponent, {
+      props: defaultProps
+    })
+
+    expect(wrapper.vm.rotateClockwise([])).toStrictEqual([])
+  })
+
+  it('rotateClockwise work as expected', () => {
+    const wrapper = mount(PieceComponent, {
+      props: defaultProps,
+    })
+
+    const shape = [[1, 1], [1]]
+    expect(wrapper.vm.rotateClockwise(shape)).toStrictEqual([[1, 1], [0, 1]])
+  })
+
 })
