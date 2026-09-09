@@ -3,8 +3,8 @@ import {
   applyPenaltyLines,
   checkCollision,
   clearLines,
-  createEmptyBoard, isValidPlacement,
-  levelForLines,
+  createEmptyBoard, getPieceMatrix, isValidPlacement,
+  levelForLines, lockPiece,
   scoreForLines,
   spawnPiece,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -19,122 +19,195 @@ import { Piece, PieceId } from '../../shared/PieceClass'
 const MAX_VIOLATIONS = 5
 
 export class Player {
-  name: string
-  socket: Socket
-  room: string
-  id: number = 1
+  private readonly _name: string
+  private readonly _socket: Socket
+  private readonly _room: string
+  private readonly _id: number = 1
   /** Authoritative board: rebuilt here from the placements the client reports. */
-  board: number[][] = createEmptyBoard()
-  score: number = 0
-  linesCount: number = 0
-  level: number = 1
-  isGameOver: boolean = false
+  private _board: number[][] = createEmptyBoard()
+  private _score: number = 0
+  private _linesCount: number = 0
+  private _level: number = 1
+  private _isGameOver: boolean = false
   /** How many pieces this player has taken from the room sequence. */
-  queueIndex: number = 0
-  currentPieceId: PieceId | null = null
-  heldPieceId: PieceId | null = null
-  canHold: boolean = true
+  private _queueIndex: number = 0
+  private _currentPieceId: PieceId | null = null
+  private _heldPieceId: PieceId | null = null
+  private _canHold: boolean = true
   /** Penalty lines pushed to this client, and how many it confirmed absorbing. */
   penaltiesSent: number = 0
   penaltiesApplied: number = 0
   /** Consecutive rejected placements; an honest client resyncs and drops back to 0. */
   violations: number = 0
 
-  constructor(name: string, socket: Socket, room: string) {
-    this.name = name
-    this.socket = socket
-    this.room = room
+  constructor(name: string, socket: Socket, room: string, id: number) {
+    this._name = name
+    this._socket = socket
+    this._room = room
+    this._id = id
   }
 
-  getSocket(): Socket {
-    return this.socket
+  // getter //
+  get socket(): Socket {
+    return this._socket
   }
 
+  get name(): string {
+    return this._name
+  }
+
+  get id(): number {
+    return this._id
+  }
+
+  get isGameOver(): boolean {
+    return this._isGameOver
+  }
+
+  get queueIndex(): number {
+    return this._queueIndex
+  }
+
+  // setter //
+  set isGameOver(value: boolean) {
+    this._isGameOver = value
+  }
+
+  // method //
   resetRoundState() {
-    this.board = createEmptyBoard()
-    this.score = 0
-    this.linesCount = 0
-    this.level = 1
-    this.isGameOver = false
-    this.queueIndex = 0
-    this.currentPieceId = null
-    this.heldPieceId = null
-    this.canHold = true
+    this._board = createEmptyBoard()
+    this._score = 0
+    this._linesCount = 0
+    this._level = 1
+    this._isGameOver = false
+    this._queueIndex = 0
+    this._currentPieceId = null
+    this._heldPieceId = null
+    this._canHold = true
     this.penaltiesSent = 0
     this.penaltiesApplied = 0
     this.violations = 0
   }
 
   takeNextPiece(socket: Socket, game: Game, room: string) {
-    const pieceId = game.pieces[this.queueIndex]
+    const pieceId = game.pieces[this._queueIndex]
     if (pieceId === undefined) return null
-    this.queueIndex += 1
+    this._queueIndex += 1
     game.ensurePieceSupply(socket, room)
-    this.currentPieceId = pieceId as PieceId
+    this._currentPieceId = pieceId as PieceId
   }
 
-  advanceToNextPiece(socket: Socket, game: Game, room: string) {
-    this.canHold = true
+  handlePieceHeld(game: Game, room: string) {
+    if (!game.started || this._isGameOver || !this._canHold) return
+    if (this._currentPieceId === null) return
+
+    if (this._heldPieceId === null) {
+      this._heldPieceId = this._currentPieceId
+      this.takeNextPiece(this._socket, game, room)
+      if (checkCollision(this._board, spawnPiece(this._currentPieceId), 0, 0)) {
+        this._isGameOver = true
+        this.broadcastBoard()
+        checkForWinner(room)
+      }
+    } else {
+      const swapped = this._heldPieceId
+      this._heldPieceId = this._currentPieceId
+      this._currentPieceId = swapped
+    }
+    this._canHold = false
+  }
+
+  handlePieceLocked(
+    game: Game,
+    room: string,
+    data: { pieceId: number; x: number; y: number; rotation: number; penaltyCount: number },
+  ) {
+    if (!game.started || this._isGameOver || this._currentPieceId === null) return
+
+    this.syncPenalties(data.penaltyCount)
+
+    if (data.pieceId !== this._currentPieceId || !Number.isInteger(data.rotation)) {
+      this.rejectPlacement(room)
+      return
+    }
+
+    const piece = new Piece(
+      this._currentPieceId,
+      data.x,
+      data.y,
+      data.rotation,
+      getPieceMatrix(this._currentPieceId, data.rotation),
+    )
+
+    if (!isValidPlacement(this._board, piece)) {
+      this.rejectPlacement(room)
+      return
+    }
+    const linesCleared = this.clearLines(lockPiece(this._board, piece))
+
+    if (linesCleared > 1) game.sendPenaltyToOpponents(this, linesCleared - 1)
+
+    this.advanceToNextPiece(this._socket, game, room)
+    this.broadcastBoard()
+    if (this._isGameOver) checkForWinner(room)
+  }
+
+  // Private Method //
+
+  private advanceToNextPiece(socket: Socket, game: Game, room: string) {
+    this._canHold = true
     this.takeNextPiece(socket, game, room)
     if (
-      this.currentPieceId !== null &&
-      checkCollision(this.board, spawnPiece(this.currentPieceId), 0, 0)
+      this._currentPieceId !== null &&
+      checkCollision(this._board, spawnPiece(this._currentPieceId), 0, 0)
     ) {
-      this.isGameOver = true
+      this._isGameOver = true
     }
   }
 
-  rejectPlacement(room: string) {
+  private rejectPlacement(room: string) {
     this.violations += 1
-    this.socket.emit('board_resync', {
-      board: this.board,
-      pieceId: this.currentPieceId,
+    this._socket.emit('board_resync', {
+      board: this._board,
+      pieceId: this._currentPieceId,
       penaltyCount: this.penaltiesApplied,
     })
 
     if (this.violations >= MAX_VIOLATIONS) {
-      console.warn(`⚠️  ${this.name} sent ${this.violations} impossible placements in a row`)
-      this.isGameOver = true
+      console.warn(`⚠️  ${this._name} sent ${this.violations} impossible placements in a row`)
+      this._isGameOver = true
       this.broadcastBoard()
       checkForWinner(room)
     }
   }
 
-  broadcastBoard() {
-    if (this.socket) {
-      this.socket.broadcast.to(this.room).emit('game_update', {
-        name: this.name,
-        board: this.board,
-        isGameOver: this.isGameOver,
-        id: this.id,
+  private broadcastBoard() {
+    if (this._socket) {
+      this._socket.broadcast.to(this._room).emit('game_update', {
+        name: this._name,
+        board: this._board,
+        isGameOver: this._isGameOver,
+        id: this._id,
       })
     }
   }
 
-  syncPenalties(reported: number) {
+  private syncPenalties(reported: number) {
     if (!Number.isInteger(reported)) return
     const confirmed = Math.min(reported, this.penaltiesSent)
     const pending = confirmed - this.penaltiesApplied
     if (pending <= 0) return
-    this.applyPenaltyLines(pending)
+    this._board = applyPenaltyLines(this._board, pending)
     this.penaltiesApplied = confirmed
   }
 
-  applyPenaltyLines(lines: number) {
-    this.board = applyPenaltyLines(this.board, lines)
-  }
-
-  isValidPlacement(piece: Piece): boolean {
-    return isValidPlacement(this.board, piece)
-  }
-
-  clearLines(locked: number[][]): number {
+  private clearLines(locked: number[][]): number {
     this.violations = 0
     const { newBoard, linesCleared } = clearLines(locked)
-    this.board = newBoard
-    this.linesCount += linesCleared
-    this.score += scoreForLines(linesCleared, this.level)
-    this.level = levelForLines(this.linesCount)
+    this._board = newBoard
+    this._linesCount += linesCleared
+    this._score += scoreForLines(linesCleared, this._level)
+    this._level = levelForLines(this._linesCount)
     return linesCleared
   }
 }

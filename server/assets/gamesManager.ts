@@ -1,21 +1,7 @@
 import type { Socket } from 'socket.io'
-import {
-  checkCollision,
-  createEmptyBoard,
-  getPieceMatrix,
-  lockPiece,
-  spawnPiece,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-} from '../../shared/tetrisEngine'
-
 import { Game } from './GameClass'
 import { Player } from './PlayerClass'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { Piece } from '../../shared/PieceClass'
 
-export { createEmptyBoard }
 
 /** Every room currently alive on this server, keyed by its name. */
 const games = new Map<string, Game>()
@@ -37,11 +23,8 @@ export function joinOrCreateGame(room: string, name: string, socket: Socket) {
     return
   }
 
-  const player = new Player(name, socket, room)
-  if (gameRoom) gameRoom.joinRoom(player)
-  else games.set(room, new Game(player))
-
-  player.getSocket().emit('you_join', Number(player.id))
+  if (gameRoom) gameRoom.joinRoom(name, socket, room)
+  else games.set(room, new Game(name, socket, room))
 }
 
 export function leaveRoom(socket: Socket) {
@@ -78,34 +61,7 @@ export function handlePieceLocked(
   const found = findPlayerGame(socket)
   if (!found) return
   const { game, room, player } = found
-  if (!game.started || player.isGameOver || player.currentPieceId === null) return
-
-  player.syncPenalties(data.penaltyCount)
-
-  if (data.pieceId !== player.currentPieceId || !Number.isInteger(data.rotation)) {
-    player.rejectPlacement(room)
-    return
-  }
-
-  const piece = new Piece(
-    player.currentPieceId,
-    data.x,
-    data.y,
-    data.rotation,
-    getPieceMatrix(player.currentPieceId, data.rotation)
-  )
-
-  if (!player.isValidPlacement(piece)) {
-    player.rejectPlacement(room)
-    return
-  }
-  const linesCleared = player.clearLines(lockPiece(player.board, piece))
-
-  if (linesCleared > 1) game.sendPenaltyToOpponents(player, linesCleared - 1)
-
-  player.advanceToNextPiece(socket, game, room)
-  player.broadcastBoard()
-  if (player.isGameOver) checkForWinner(room)
+  player.handlePieceLocked(game, room, data)
 }
 
 /** Mirrors the client hold swap, so both sides expect the same next piece. */
@@ -113,25 +69,7 @@ export function handlePieceHeld(socket: Socket) {
   const found = findPlayerGame(socket)
   if (!found) return
   const { game, room, player } = found
-  if (!game.started || player.isGameOver || !player.canHold) return
-  if (player.currentPieceId === null) return
-
-  if (player.heldPieceId === null) {
-    player.heldPieceId = player.currentPieceId
-    player.takeNextPiece(socket, game, room)
-    if (
-      checkCollision(player.board, spawnPiece(player.currentPieceId), 0, 0)
-    ) {
-      player.isGameOver = true
-      player.broadcastBoard()
-      checkForWinner(room)
-    }
-  } else {
-    const swapped = player.heldPieceId
-    player.heldPieceId = player.currentPieceId
-    player.currentPieceId = swapped
-  }
-  player.canHold = false
+  player.handlePieceHeld(game, room)
 }
 
 export function changeTeam(room: string, socket: Socket) {

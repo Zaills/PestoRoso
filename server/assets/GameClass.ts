@@ -16,10 +16,13 @@ export class Game {
 
   private _started: boolean = false
 
-  constructor(player: Player) {
+  constructor(name: string, socket: Socket, room: string) {
+      const player = new Player(name, socket, room, this._ids++)
     this._players = [player]
     this._updateGameRoom()
+    socket.emit('you_join', Number(player.id))
   }
+
 
   // Getter //
   get started() {
@@ -52,14 +55,15 @@ export class Game {
   }
 
   // GameManager //
-  joinRoom(player: Player) {
-    player.id = this._ids++
+  joinRoom(name: string, socket: Socket, room: string) {
+    const player = new Player(name, socket, room, this._ids++)
     if (this._players.length >= MAX_PLAYERS) {
       this._spectators.push(player)
     } else {
       this._players.push(player)
     }
     this._updateGameRoom()
+    socket.emit('you_join', Number(player.id))
   }
 
   leaveRoom(socket: Socket, room: string) {
@@ -113,7 +117,6 @@ export class Game {
 
   checkForWinner() {
     if (!this._started) return
-    // this._updateGameRoom()
     const alive = this._players.filter((player) => !player.isGameOver)
     const soloGame = this._playersAtStart <= 1
     if (alive.length > 1) return
@@ -129,7 +132,7 @@ export class Game {
     }
     const everyone = [...this._players, ...this._spectators]
     everyone.forEach((player) => {
-      player.getSocket().emit('game_end', payload)
+      player.socket.emit('game_end', payload)
     })
   }
 
@@ -137,7 +140,7 @@ export class Game {
     this._players.forEach((opponent) => {
       if (opponent === from || opponent.isGameOver) return
       opponent.penaltiesSent += lines
-      opponent.getSocket().emit('get_penalty', lines)
+      opponent.socket.emit('get_penalty', lines)
     })
   }
 
