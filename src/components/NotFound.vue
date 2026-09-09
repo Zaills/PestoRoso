@@ -1,22 +1,27 @@
 <script setup lang="ts"></script>
 
 <template>
-  <span class="error-banner">
+  <div class="error-banner">
     <h1 class="error-badge__text">404 Not Found</h1>
-  </span>
+  </div>
 </template>
 
 <style scoped>
 .error-banner {
-  display: inline-block;
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   filter: drop-shadow(0 4px 0 #000000);
-  min-height: 100vh;
-  justify-content: flex-start;
-  padding-top: 60vh;
+  pointer-events: none;
 }
 
 .error-badge__text {
   display: inline-block;
+  margin: 0;
   text-decoration: none;
   font-family: 'Titan One', sans-serif;
   font-size: 4rem;
@@ -37,5 +42,4 @@
     0% 10px
   );
 }
-
 </style>

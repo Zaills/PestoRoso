@@ -1,0 +1,24 @@
+/* Global reset: the application is a fixed viewport app, no page scrolling. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* No scrollbar anywhere in the application. */
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Hides the scrollbars of the inner containers that still scroll internally. */
+* {
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}
