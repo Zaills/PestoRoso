@@ -32,7 +32,7 @@ function findPlayerGame(socket: Socket): { game: Game; room: string; player: Pla
 
 export function joinOrCreateGame(room: string, name: string, socket: Socket) {
   const gameRoom = games.get(room)
-  if (gameRoom && gameRoom.hasStarted()) {
+  if (gameRoom && gameRoom.started) {
     socket.emit('room_denied', 'game_in_progress')
     return
   }
@@ -78,7 +78,7 @@ export function handlePieceLocked(
   const found = findPlayerGame(socket)
   if (!found) return
   const { game, room, player } = found
-  if (!game.hasStarted() || player.isGameOver || player.currentPieceId === null) return
+  if (!game.started || player.isGameOver || player.currentPieceId === null) return
 
   player.syncPenalties(data.penaltyCount)
 
@@ -113,7 +113,7 @@ export function handlePieceHeld(socket: Socket) {
   const found = findPlayerGame(socket)
   if (!found) return
   const { game, room, player } = found
-  if (!game.hasStarted() || player.isGameOver || !player.canHold) return
+  if (!game.started || player.isGameOver || !player.canHold) return
   if (player.currentPieceId === null) return
 
   if (player.heldPieceId === null) {
