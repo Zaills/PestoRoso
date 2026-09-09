@@ -1,28 +1,30 @@
 <script setup lang="ts"></script>
 
 <template>
-  <span class="shadow-container">
-    <RouterLink to="/" class="btn-chanfrein">404 Not Found</RouterLink>
+  <span class="error-banner">
+    <h1 class="error-badge__text">404 Not Found</h1>
   </span>
 </template>
 
 <style scoped>
-.shadow-container {
+.error-banner {
   display: inline-block;
-  /* Black shadow offset 4px down, following the bevelled outline. */
   filter: drop-shadow(0 4px 0 #000000);
-  transition: filter 0.1s ease;
+  min-height: 100vh;
+  justify-content: flex-start;
+  padding-top: 60vh;
 }
 
-.btn-chanfrein {
+.error-badge__text {
   display: inline-block;
   text-decoration: none;
   font-family: 'Titan One', sans-serif;
   font-size: 4rem;
   background-color: #eae7e7;
   color: #bf1818;
-  padding: 12px 24px;
+  padding: 24px 32px;
   font-weight: bold;
+  user-select: none;
 
   clip-path: polygon(
     10px 0%,
@@ -34,20 +36,6 @@
     0% calc(100% - 10px),
     0% 10px
   );
-
-  transition: transform 0.1s ease;
 }
 
-/* Hovering the container brightens the button. */
-.shadow-container:hover .btn-chanfrein {
-  background-color: #ffffff;
-}
-
-/* Pressed-in effect: the button moves down and the shadow collapses. */
-.shadow-container:active {
-  filter: drop-shadow(0 0px 0 #000000);
-}
-.shadow-container:active .btn-chanfrein {
-  transform: translateY(4px);
-}
 </style>
