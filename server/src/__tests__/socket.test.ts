@@ -19,6 +19,8 @@ vi.mock('../../assets/gamesManager', () => ({
   handleBoardUpdate: vi.fn(),
   handleMorePiecesRequest: vi.fn(),
   sendPenalty: vi.fn(),
+  handlePieceLocked: vi.fn(),
+  handlePieceHeld: vi.fn(),
 }))
 
 vi.mock('./socket', () => ({
@@ -153,5 +155,29 @@ describe('Socket Server', () => {
         }, 50)
       })
     })
+
+    it('should call handlePieceLocked when client emits "piece_locked"', () => {
+      const data = { pieceId: 0, x: 0, y: 0, rotation: 0, penaltyCount: 0 }
+      clientSocket.emit('piece_locked', data)
+
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          expect(gamesManager.handlePieceLocked).toHaveBeenCalledWith(expect.any(Object), data)
+          resolve()
+        }, 50)
+      })
+    })
+
+    it('should call handlePieceHeld when client emits "piece_held"', () => {
+      clientSocket.emit('piece_held')
+
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          expect(gamesManager.handlePieceHeld).toHaveBeenCalledWith(expect.any(Object))
+          resolve()
+        }, 50)
+      })
+    })
   })
+
 })
