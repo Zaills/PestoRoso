@@ -1,4 +1,4 @@
-export type PieceId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+import type { PieceId } from '@shared/tetrisEngine.ts'
 
 export class Piece {
   pieceId: PieceId
@@ -14,14 +14,5 @@ export class Piece {
     this.rotation = rotation
     this.matrix = matrix
   }
-
-  // getGhostY(board: number[][]): number {
-  //   let ghostY = this.y
-  //   while (!checkCollision(board, { ...this, y: ghostY }, 0, 1)) {
-  //     ghostY++
-  //   }
-  //   return ghostY
-  // }
-
 
 }

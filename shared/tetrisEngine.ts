@@ -1,6 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { Piece, type PieceId } from './PieceClass.ts'
+import { Piece } from './PieceClass.ts'
+import pieceMatrix from './PiecesMatrix.json'
 
 /**
  * Pure Tetris engine, shared by the browser and the game server.
@@ -24,45 +23,9 @@ export const PENALTY_ID = 8
 /** A piece returns to its initial shape after four quarter turns. */
 export const ROTATIONS = 4
 
+export type PieceId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
-export const PIECES: Record<PieceId, number[][]> = {
-  1: [
-    [0, 0, 0, 0],
-    [1, 1, 1, 1],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-  ],
-  2: [
-    [1, 0, 0],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-  3: [
-    [0, 0, 1],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-  4: [
-    [1, 1],
-    [1, 1],
-  ],
-  5: [
-    [0, 1, 1],
-    [1, 1, 0],
-    [0, 0, 0],
-  ],
-  6: [
-    [0, 1, 0],
-    [1, 1, 1],
-    [0, 0, 0],
-  ],
-  7: [
-    [1, 1, 0],
-    [0, 1, 1],
-    [0, 0, 0],
-  ],
-  8: [[8]],
-}
+export const PIECES: Record<PieceId, number[][]> = pieceMatrix
 
 export type TetriminoName = 'I' | 'J' | 'L' | 'O' | 'S' | 'T' | 'Z'
 export type PieceName = TetriminoName | 'penalty'
@@ -77,15 +40,6 @@ export const PIECE_NAMES: Record<PieceId, PieceName> = {
   7: 'Z',
   8: 'penalty',
 }
-
-// export interface PieceState {
-//   matrix: number[][]
-//   x: number
-//   y: number
-//   pieceId: PieceId
-//   /** Quarter turns applied to the base shape, kept in sync with `matrix`. */
-//   rotation: number
-// }
 
 /** Points awarded for clearing 0 to 4 lines at once, before the level multiplier. */
 const LINE_POINTS = [0, 100, 300, 500, 800]

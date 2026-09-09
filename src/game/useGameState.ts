@@ -1,22 +1,22 @@
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { socket } from '@/socket'
 import {
-  createEmptyBoard,
-  spawnPiece,
-  checkCollision,
-  getPieceMatrix,
-  lockPiece,
-  clearLines,
-  getGhostY,
   applyPenaltyLines,
-  scoreForLines,
+  checkCollision,
+  clearLines,
+  createEmptyBoard,
+  getGhostY,
+  getPieceMatrix,
   levelForLines,
-  ROTATIONS,
+  lockPiece,
   PIECE_NAMES,
-  type PieceState,
-  type PieceName,
   type PieceId,
+  type PieceName,
+  ROTATIONS,
+  scoreForLines,
+  spawnPiece
 } from './tetrisEngine'
+import { Piece } from '@shared/PieceClass.ts'
 
 /**
  * Local game state.
@@ -28,7 +28,7 @@ import {
  */
 export function useGameState() {
   const board = ref<number[][]>(createEmptyBoard())
-  const currentPiece = ref<PieceState | null>(null)
+  const currentPiece = ref<Piece | null>(null)
   const heldPieceId = ref<PieceId | null>(null)
   const canHold = ref(true)
   const pieceQueue = ref<number[]>([])
