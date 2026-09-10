@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import GameView from '@/views/GameView.vue'
 import { socket } from '@/socket.ts'
 
@@ -15,6 +15,7 @@ vi.mock('@/socket.ts', () => ({
 }))
 
 const mockPush = vi.fn()
+
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
@@ -80,6 +81,16 @@ describe('Home View', () => {
     deniedCallback()
 
     expect(socket.disconnect).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith('/')
+  })
+
+  it('should go to home if cannot fetch server api', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Connection failed'))
+
+    mount(GameView, { global: { stubs: { PlayerHandler: true } } })
+
+    await flushPromises()
+
     expect(mockPush).toHaveBeenCalledWith('/')
   })
 })
