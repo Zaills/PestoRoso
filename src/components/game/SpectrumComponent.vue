@@ -122,7 +122,8 @@ const displayName = computed(() => props.name || `PLAYER ${props.id}`)
 }
 
 .opponent-name {
-  font-size: 0.75rem;
+  font-size: 1rem;
+  font-family: 'Titan One', sans-serif;
   letter-spacing: 1px;
   color: #ffffff;
   background-color: #222222;
@@ -133,15 +134,6 @@ const displayName = computed(() => props.name || `PLAYER ${props.id}`)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.opponent.dead .opponent-name {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.opponent.winner .opponent-name {
-  color: #ffd21f;
-  border-color: #ffd21f;
 }
 
 .overlay {
@@ -162,6 +154,14 @@ const displayName = computed(() => props.name || `PLAYER ${props.id}`)
 
 .overlay.win {
   color: #ffd21f;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.7rem;
+}
+
+.overlay.game-over {
+  color: #fa1e1e;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.7rem;
 }
 
 .opponent-game-area {
@@ -180,4 +180,5 @@ const displayName = computed(() => props.name || `PLAYER ${props.id}`)
 .opponent.winner .opponent-game-area {
   border-color: #ffd21f;
 }
+
 </style>

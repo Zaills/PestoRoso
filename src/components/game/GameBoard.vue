@@ -329,7 +329,9 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 }
 
 .label {
-  text-align: right;
+  text-align: center;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.1rem;
   color: black;
   background-color: white;
 }
@@ -337,15 +339,20 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 .game-over,
 .game-win {
   position: absolute;
+  font-family: 'Titan One', sans-serif;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: rgb(0 0 0 / 0.7);
   color: white;
-  font-size: 28px;
+  font-size: 2rem;
   font-weight: bold;
   letter-spacing: 2px;
+}
+
+.game-over {
+  color: #fa1e1e;
 }
 
 .game-win {
@@ -355,10 +362,11 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 .score-panel {
   display: flex;
   gap: 16px;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.2rem;
   justify-content: center;
   color: white;
   padding: 4px;
-  font-size: 14px;
 }
 
 .end-banner {
