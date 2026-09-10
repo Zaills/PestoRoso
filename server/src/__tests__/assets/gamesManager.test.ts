@@ -1,12 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import {
   changeTeam,
   joinOrCreateGame,
   MAX_PLAYERS,
   leaveRoom,
   startGame,
+  handlePieceLocked,
+  handlePieceHeld, checkForWinner,
 } from '../../../assets/gamesManager'
 import { Socket } from 'socket.io'
+import { Player } from '../../../assets/PlayerClass'
+import { Game } from '../../../assets/GameClass'
 
 function createMockSocket(id: string) {
   return {
@@ -235,6 +239,20 @@ describe('Server Game Manager', () => {
         ['B5'],
       )
     })
+
+    it('should delete game if all player left', () => {
+      const room = 'delete'
+      const name = 'leaver'
+      const socket = createMockSocket('leave-socket')
+
+      joinOrCreateGame(room, name, socket)
+
+      const spy = vi.spyOn(Map.prototype, 'delete')
+
+      leaveRoom(socket)
+
+      expect(spy).toHaveBeenCalledOnce()
+    })
   })
 
   describe('In-Game Interactions', () => {
@@ -259,6 +277,85 @@ describe('Server Game Manager', () => {
       expect(socket1.emit).toHaveBeenCalledWith('game_end', {
         winnerId: 2,
         winnerName: 'Stayer',
+      })
+    })
+
+    it('should checkForWinner return null if winner not found', () => {
+      expect(() => checkForWinner("test")).not.toThrow()
+    })
+
+    it('should checkForWinner delegate to game', () => {
+      joinOrCreateGame("test", "test",createMockSocket('winner'))
+      const winCheckSpy = vi.spyOn(Game.prototype, 'checkForWinner')
+
+      checkForWinner("test")
+
+      expect(winCheckSpy).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('Handle Sockets', () => {
+    let socket: Socket
+    const room = 'room-1'
+    const playerName = 'Alice'
+
+    beforeEach(() => {
+      socket = createMockSocket('socket-1')
+    })
+
+    afterEach(() => {
+      leaveRoom(socket)
+      vi.restoreAllMocks()
+    })
+
+    it('should findPlayerGame return null if player not found ', () => {
+      expect(() => handlePieceHeld(socket)).not.toThrow()
+    })
+
+
+    describe('handlePieceLocked', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const lockSpy = vi.spyOn(Player.prototype, 'handlePieceLocked')
+        const dummyData = { pieceId: 1, x: 0, y: 0, rotation: 0, penaltyCount: 0 }
+
+        handlePieceLocked(socket, dummyData)
+
+        expect(lockSpy).not.toHaveBeenCalled()
+      })
+
+      it('should delegate to player.handlePieceLocked when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const lockSpy = vi
+          .spyOn(Player.prototype, 'handlePieceLocked')
+          .mockImplementation(() => {})
+        const dummyData = { pieceId: 1, x: 0, y: 0, rotation: 0, penaltyCount: 0 }
+
+        handlePieceLocked(socket, dummyData)
+
+        expect(lockSpy).toHaveBeenCalledOnce()
+        expect(lockSpy).toHaveBeenCalledWith(expect.anything(), room, dummyData)
+      })
+    })
+
+    describe('handlePieceHeld', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePieceHeld')
+
+        handlePieceHeld(socket)
+
+        expect(holdSpy).not.toHaveBeenCalled()
+      })
+
+      it('should delegate to player.handlePieceHeld when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePieceHeld')
+
+        handlePieceHeld(socket)
+
+        expect(holdSpy).toHaveBeenCalledOnce()
+        expect(holdSpy).toHaveBeenCalledWith(expect.anything(), room)
       })
     })
   })
