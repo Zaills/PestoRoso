@@ -36,9 +36,9 @@ export class Player {
   private _canHold: boolean = true
   /** Penalty lines pushed to this client, and how many it confirmed absorbing. */
   penaltiesSent: number = 0
-  penaltiesApplied: number = 0
+  private _penaltiesApplied: number = 0
   /** Consecutive rejected placements; an honest client resyncs and drops back to 0. */
-  violations: number = 0
+  private _violations: number = 0
 
   constructor(name: string, socket: Socket, room: string, id: number) {
     this._name = name
@@ -85,8 +85,8 @@ export class Player {
     this._heldPieceId = null
     this._canHold = true
     this.penaltiesSent = 0
-    this.penaltiesApplied = 0
-    this.violations = 0
+    this._penaltiesApplied = 0
+    this._violations = 0
   }
 
   takeNextPiece(socket: Socket, game: Game, room: string) {
@@ -104,11 +104,6 @@ export class Player {
     if (this._heldPieceId === null) {
       this._heldPieceId = this._currentPieceId
       this.takeNextPiece(this._socket, game, room)
-      if (checkCollision(this._board, spawnPiece(this._currentPieceId), 0, 0)) {
-        this._isGameOver = true
-        this.broadcastBoard()
-        checkForWinner(room)
-      }
     } else {
       const swapped = this._heldPieceId
       this._heldPieceId = this._currentPieceId
@@ -171,15 +166,15 @@ export class Player {
   }
 
   private rejectPlacement(room: string) {
-    this.violations += 1
+    this._violations += 1
     this._socket.emit('board_resync', {
       board: this._board,
       pieceId: this._currentPieceId,
-      penaltyCount: this.penaltiesApplied,
+      penaltyCount: this._penaltiesApplied,
     })
 
-    if (this.violations >= MAX_VIOLATIONS) {
-      console.warn(`⚠️  ${this._name} sent ${this.violations} impossible placements in a row`)
+    if (this._violations >= MAX_VIOLATIONS) {
+      console.warn(`⚠️  ${this._name} sent ${this._violations} impossible placements in a row`)
       this._isGameOver = true
       this.broadcastBoard()
       checkForWinner(room)
@@ -187,27 +182,25 @@ export class Player {
   }
 
   private broadcastBoard() {
-    if (this._socket) {
-      this._socket.broadcast.to(this._room).emit('game_update', {
-        name: this._name,
-        board: this._board,
-        isGameOver: this._isGameOver,
-        id: this._id,
-      })
-    }
+    this._socket.broadcast.to(this._room).emit('game_update', {
+      name: this._name,
+      board: this._board,
+      isGameOver: this._isGameOver,
+      id: this._id,
+    })
   }
 
   private syncPenalties(reported: number) {
     if (!Number.isInteger(reported)) return
     const confirmed = Math.min(reported, this.penaltiesSent)
-    const pending = confirmed - this.penaltiesApplied
+    const pending = confirmed - this._penaltiesApplied
     if (pending <= 0) return
     this._board = applyPenaltyLines(this._board, pending)
-    this.penaltiesApplied = confirmed
+    this._penaltiesApplied = confirmed
   }
 
   private clearLines(locked: number[][]): number {
-    this.violations = 0
+    this._violations = 0
     const { newBoard, linesCleared } = clearLines(locked)
     this._board = newBoard
     this._linesCount += linesCleared
