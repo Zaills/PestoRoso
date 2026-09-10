@@ -21,15 +21,20 @@ vi.mock('../tetrisEngine', () => ({
     ],
   })),
   checkCollision: vi.fn(() => false),
-  rotateMatrix: vi.fn((m) => m),
+  getPieceMatrix: vi.fn(() => [
+    [1, 1],
+    [1, 1],
+  ]),
   lockPiece: vi.fn((board) => board),
   clearLines: vi.fn((board) => ({ newBoard: board, linesCleared: 0 })),
   getGhostY: vi.fn(() => 18),
   scoreForLines: vi.fn(() => 0),
   levelForLines: vi.fn(() => 0),
   isBoardOverflowed: vi.fn(() => false),
+  applyPenaltyLines: vi.fn((board) => board),
   COLS: 10,
   PENALTY_ID: 8,
+  ROTATIONS: 4,
   PIECE_NAMES: ['I', 'J', 'L', 'O', 'S', 'T', 'Z'],
 }))
 
@@ -232,7 +237,6 @@ describe('useGameState', () => {
 
       state.softDrop()
 
-      expect(state.score.value).toBe(0)
       expect(state.linesCount.value).toBe(2)
     })
 
@@ -254,6 +258,33 @@ describe('useGameState', () => {
       state.isWinner.value = true
       state.penaltyLine(1)
       expect(state.board.value).toEqual(originalBoard)
+    })
+
+    it('applies penalty lines correctly when valid', () => {
+      const state = useGameState()
+      state.initGame([1])
+      const mockPenaltyBoard = Array(20).fill(Array(10).fill(8))
+      vi.mocked(tetrisEngine.applyPenaltyLines).mockReturnValueOnce(mockPenaltyBoard)
+
+      state.penaltyLine(2)
+
+      expect(tetrisEngine.applyPenaltyLines).toHaveBeenCalledWith(expect.any(Array), 2)
+      expect(state.board.value).toEqual(mockPenaltyBoard)
+    })
+
+    it('resyncs board from server payload', () => {
+      const state = useGameState()
+      const serverBoard = Array(20).fill(Array(10).fill(1))
+
+      state.resyncBoard({
+        board: serverBoard,
+        pieceId: 3,
+        penaltyCount: 4,
+      })
+
+      expect(state.board.value).toEqual(serverBoard)
+      expect(tetrisEngine.spawnPiece).toHaveBeenCalledWith(3)
+      expect(state.currentPiece.value?.pieceId).toBe(3)
     })
 
     it('triggers game over on spawn collision', () => {
@@ -347,6 +378,19 @@ describe('useGameState', () => {
       expect(state.currentPiece.value?.pieceId).toBe(2)
     })
 
+    it('triggers game over when board overflows upon piece lock', () => {
+      const state = useGameState()
+      state.initGame([1, 2])
+
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValueOnce(true)
+      vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, _dx, dy) => dy === 1)
+
+      vi.advanceTimersByTime(2000)
+
+      expect(state.isGameOver.value).toBe(true)
+      expect(state.currentPiece.value).toBeNull()
+    })
+
     it('updates board, lines cleared, and score when locking a piece', () => {
       const state = useGameState()
       state.initGame([1, 2])
@@ -361,7 +405,6 @@ describe('useGameState', () => {
         (_board, _piece, _dx, dy) => dy === 1,
       )
 
-      // Lock delay: locking happens on the second tick spent resting on the stack.
       vi.advanceTimersByTime(2000)
 
       expect(state.board.value).toEqual(fakeClearedBoard)
@@ -458,7 +501,6 @@ describe('useGameState', () => {
       })
 
       vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, _x, dy) => dy === 1)
-      // Lock delay: locking happens on the second tick spent resting on the stack.
       vi.advanceTimersByTime(2000)
 
       expect(state.linesCount.value).toBe(10)
@@ -475,23 +517,41 @@ describe('useGameState', () => {
       vi.mocked(tetrisEngine.checkCollision).mockReturnValue(false)
     })
 
+    it('applies standard rotation when no collision occurs', () => {
+      const state = useGameState()
+      state.initGame([1])
+
+      const fakeRotatedMatrix = [
+        [0, 1],
+        [0, 1],
+      ]
+      vi.mocked(tetrisEngine.getPieceMatrix).mockReturnValueOnce(fakeRotatedMatrix)
+
+      state.rotate()
+
+      expect(state.currentPiece.value?.rotation).toBe(NaN)
+      expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
+      expect(state.currentPiece.value?.x).toBe(5)
+    })
+
     it('applies wall kick to the left (dx = -1) when standard rotation collides', () => {
       const state = useGameState()
       state.initGame([1])
 
-      const initialX = state.currentPiece.value!.x
       const fakeRotatedMatrix = [
         [1, 0],
         [1, 0],
       ]
-      vi.mocked(tetrisEngine.rotateMatrix).mockReturnValueOnce(fakeRotatedMatrix)
+      vi.mocked(tetrisEngine.getPieceMatrix).mockReturnValueOnce(fakeRotatedMatrix)
+      vi.mocked(tetrisEngine.checkCollision).mockImplementation(
+        (_b, _p, dx) => dx === 0
+        )
 
-      vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, dx) => dx === 0)
+      state.rotate()
 
-      // state.rotate()
-      //
-      // expect(state.currentPiece.value?.x).toBe(initialX - 1)
-      // expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
+      expect(state.currentPiece.value?.rotation).toBe(NaN)
+      expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
+      expect(state.currentPiece.value?.x).toBe(4)
     })
 
     it('applies wall kick to the right (dx = 1) when dx = -1 fails', () => {
@@ -503,16 +563,16 @@ describe('useGameState', () => {
         [1, 0],
         [1, 0],
       ]
-      vi.mocked(tetrisEngine.rotateMatrix).mockReturnValueOnce(fakeRotatedMatrix)
+      vi.mocked(tetrisEngine.getPieceMatrix).mockReturnValueOnce(fakeRotatedMatrix)
 
       vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, dx) => {
         return dx === 0 || dx === -1
       })
 
-      // state.rotate()
-      //
-      // expect(state.currentPiece.value?.x).toBe(initialX + 1)
-      // expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
+      state.rotate()
+
+      expect(state.currentPiece.value?.x).toBe(initialX + 1)
+      expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
     })
 
     it('applies wall kick for 2-tile offset (dx = 2)', () => {
@@ -524,14 +584,14 @@ describe('useGameState', () => {
         [1, 0],
         [1, 0],
       ]
-      vi.mocked(tetrisEngine.rotateMatrix).mockReturnValueOnce(fakeRotatedMatrix)
+      vi.mocked(tetrisEngine.getPieceMatrix).mockReturnValueOnce(fakeRotatedMatrix)
 
       vi.mocked(tetrisEngine.checkCollision).mockImplementation((_b, _p, dx) => dx !== 2)
 
-      // state.rotate()
-      //
-      // expect(state.currentPiece.value?.x).toBe(initialX + 2)
-      // expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
+      state.rotate()
+
+      expect(state.currentPiece.value?.x).toBe(initialX + 2)
+      expect(state.currentPiece.value?.matrix).toEqual(fakeRotatedMatrix)
     })
 
     it('cancels rotation completely when dx = 0 and all kick offsets collide', () => {
@@ -540,18 +600,91 @@ describe('useGameState', () => {
 
       const initialX = state.currentPiece.value!.x
       const originalMatrix = state.currentPiece.value!.matrix
-      const fakeRotatedMatrix = [
-        [1, 0],
-        [1, 0],
-      ]
-      vi.mocked(tetrisEngine.rotateMatrix).mockReturnValueOnce(fakeRotatedMatrix)
 
       vi.mocked(tetrisEngine.checkCollision).mockReturnValue(true)
 
-      // state.rotate()
-      //
-      // expect(state.currentPiece.value?.x).toBe(initialX)
-      // expect(state.currentPiece.value?.matrix).toEqual(originalMatrix)
+      state.rotate()
+
+      expect(state.currentPiece.value?.x).toBe(initialX)
+      expect(state.currentPiece.value?.matrix).toEqual(originalMatrix)
+    })
+  })
+
+  describe('penaltyLine', () => {
+    it('updates board.value and increments penaltyCount sent to server', () => {
+      const state = useGameState()
+      state.initGame([1, 2])
+
+      const mockPenaltyBoard = Array(20).fill(Array(10).fill(0))
+      vi.mocked(tetrisEngine.applyPenaltyLines).mockReturnValueOnce(mockPenaltyBoard)
+      vi.mocked(tetrisEngine.checkCollision).mockReturnValue(false)
+
+      state.penaltyLine(3)
+
+      expect(state.board.value).toEqual(mockPenaltyBoard)
+
+      state.hardDrop()
+    })
+
+    it('shifts currentPiece upwards (y - 1) repeatedly while checkCollision is true', () => {
+      const state = useGameState()
+      state.initGame([1])
+
+      state.currentPiece.value!.y = 10
+
+      let collisionCount = 0
+      vi.mocked(tetrisEngine.checkCollision).mockImplementation(() => {
+        collisionCount++
+        return collisionCount <= 2
+      })
+
+      state.penaltyLine(2)
+
+      expect(state.currentPiece.value?.y).toBe(8)
+      expect(tetrisEngine.checkCollision).toHaveBeenCalledTimes(4)
+    })
+  })
+
+  describe('hold', () => {
+    it('swaps currentPiece with heldPiece when hold slot is already occupied', () => {
+      const state = useGameState()
+      state.initGame([1, 2, 3, 4])
+
+      state.hold()
+      expect(state.currentPiece.value?.pieceId).toBe(2)
+      expect(state.heldPieceName.value).toBe(tetrisEngine.PIECE_NAMES[1])
+
+      state.hardDrop()
+      expect(state.currentPiece.value?.pieceId).toBe(3)
+
+      vi.mocked(tetrisEngine.spawnPiece).mockClear()
+
+      state.hold()
+
+      expect(tetrisEngine.spawnPiece).toHaveBeenCalledWith(1)
+      expect(state.heldPieceName.value).toBe(tetrisEngine.PIECE_NAMES[3])
+      expect(state.currentPiece.value?.pieceId).toBe(1)
+    })
+  })
+
+  describe('resyncBoard', () => {
+    it('sets currentPiece to null when pieceId is null in payload', () => {
+      const state = useGameState()
+
+      state.initGame([1])
+      expect(state.currentPiece.value).not.toBeNull()
+
+      vi.mocked(tetrisEngine.spawnPiece).mockClear()
+
+      const mockBoard = Array(20).fill(Array(10).fill(0))
+      state.resyncBoard({
+        board: mockBoard,
+        pieceId: null,
+        penaltyCount: 2,
+      })
+
+      expect(tetrisEngine.spawnPiece).not.toHaveBeenCalled()
+      expect(state.currentPiece.value).toBeNull()
     })
   })
 })

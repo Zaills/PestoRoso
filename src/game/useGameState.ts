@@ -173,9 +173,6 @@ export function useGameState() {
       return
     }
 
-    // The piece rests on the stack: it only locks on the next frame, which leaves
-    // the player one last tick to slide or rotate it into place. If that move frees
-    // the space below, the branch above takes over again and gravity resumes.
     if (!isLanded.value) {
       isLanded.value = true
       return
