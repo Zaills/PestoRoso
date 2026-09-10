@@ -150,18 +150,14 @@ export class Game {
     const spectatorList = this._spectators.map((player: Player) => player.name)
 
     this._players.forEach((player, index) => {
-      if (player.socket) {
-        player.socket.emit('role_update', 'player')
-        player.socket.emit('host_update', index === 0)
-        player.socket.emit('room_update', playerList, spectatorList)
-      }
+      player.socket.emit('role_update', 'player')
+      player.socket.emit('host_update', index === 0)
+      player.socket.emit('room_update', playerList, spectatorList)
     })
     this._spectators.forEach((player: Player) => {
-      if (player.socket) {
-        player.socket.emit('role_update', 'spectator')
-        player.socket.emit('host_update', false)
-        player.socket.emit('room_update', playerList, spectatorList)
-      }
+      player.socket.emit('role_update', 'spectator')
+      player.socket.emit('host_update', false)
+      player.socket.emit('room_update', playerList, spectatorList)
     })
   }
 
