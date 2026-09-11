@@ -9,7 +9,7 @@ import {
   getGhostY,
   PIECES,
   type PieceId,
-} from '@/game/tetrisEngine.ts'
+} from '@/game/SharedData.ts'
 
 vi.mock('@/socket.ts', () => ({
   socket: {
@@ -18,7 +18,7 @@ vi.mock('@/socket.ts', () => ({
 }))
 
 import { socket } from '@/socket.ts'
-import { Piece } from '@shared/PieceClass.ts'
+import { Piece } from '../../../server/assets/PieceClass.ts'
 
 describe('tetrisEngine', () => {
   beforeAll(() => {

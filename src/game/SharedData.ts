@@ -5,4 +5,5 @@
  * to validate what this client reports. Nothing browser specific belongs there, so
  * anything client-only would be added here instead.
  */
-export * from '@shared/tetrisEngine'
+export * from '../../shared/ShareData.ts'
+

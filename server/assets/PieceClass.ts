@@ -1,4 +1,4 @@
-import type { PieceId } from '@shared/tetrisEngine.ts'
+import type { PieceId } from './tetrisEngine.ts'
 
 export class Piece {
   pieceId: PieceId

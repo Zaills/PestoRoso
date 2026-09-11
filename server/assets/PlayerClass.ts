@@ -7,14 +7,12 @@ import {
   levelForLines, lockPiece,
   scoreForLines,
   spawnPiece,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-} from '../../shared/tetrisEngine'
+} from './tetrisEngine'
 import { Game } from './GameClass'
 import { checkForWinner } from './gamesManager'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import { Piece, PieceId } from '../../shared/PieceClass'
+import { Piece, PieceId } from './PieceClass'
 
 const MAX_VIOLATIONS = 5
 

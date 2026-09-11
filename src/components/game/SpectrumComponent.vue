@@ -8,7 +8,7 @@ import {
   TOTAL_ROWS,
   type PieceId,
   type PieceName,
-} from '@/game/tetrisEngine'
+} from '@/game/SharedData.ts'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
 import { socket } from '@/socket.ts'
 

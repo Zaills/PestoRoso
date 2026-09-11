@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { socket } from '@/socket'
-import * as tetrisEngine from '../tetrisEngine'
+import * as tetrisEngine from '../SharedData.ts'
 import { useGameState } from '../useGameState'
 import { nextTick } from 'vue'
 

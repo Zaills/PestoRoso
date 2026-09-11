@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PieceComponent from '@/components/game/PieceComponent.vue'
 import { computed } from 'vue'
-import { PIECE_NAMES, type PieceId, type TetriminoName } from '@/game/tetrisEngine'
+import { PIECE_NAMES, type PieceId, type TetriminoName } from '@/game/SharedData.ts'
 
 const props = defineProps<{
   cellSize: number

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PieceComponent from '@/components/game/PieceComponent.vue'
-import type { PieceName, TetriminoName } from '@/game/tetrisEngine'
+import type { PieceName, TetriminoName } from '@/game/SharedData.ts'
 import { computed } from 'vue'
 
 const props = defineProps<{

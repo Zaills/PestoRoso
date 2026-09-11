@@ -2,22 +2,19 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 import { socket } from '@/socket'
 import {
   applyPenaltyLines,
-  checkCollision,
   clearLines,
+  COLS,
   createEmptyBoard,
-  getGhostY,
   getPieceMatrix,
   isBoardOverflowed,
   levelForLines,
-  lockPiece,
   PIECE_NAMES,
   type PieceId,
   type PieceName,
   ROTATIONS,
   scoreForLines,
-  spawnPiece
-} from './tetrisEngine'
-import { Piece } from '@shared/PieceClass.ts'
+  TOTAL_ROWS,
+} from './SharedData.ts'
 
 /**
  * Local game state.
@@ -27,9 +24,80 @@ import { Piece } from '@shared/PieceClass.ts'
  * the elimination. This composable only reports what the player did — it never
  * reports a result the server could not check.
  */
+
+interface PieceState {
+  pieceId: PieceId
+  x: number
+  y: number
+  rotation: number
+  matrix: number[][]
+}
+
+export function getGhostY(board: number[][], piece: PieceState): number {
+  let ghostY = piece.y
+  while (!checkCollision(board, { ...piece, y: ghostY }, 0, 1)) {
+    ghostY++
+  }
+  return ghostY
+}
+
+export function checkCollision(
+  board: number[][],
+  piece: PieceState,
+  dx: number,
+  dy: number,
+  rotatedMatrix?: number[][],
+): boolean {
+  const matrix = rotatedMatrix ?? piece.matrix
+  for (const [y, row] of matrix.entries()) {
+    for (const [x, cell] of row.entries()) {
+      if (cell !== 0) {
+        const newX = piece.x + x + dx
+        const newY = piece.y + y + dy
+
+        if (newX < 0 || newX >= COLS || newY >= TOTAL_ROWS) return true
+        if (newY >= 0 && board[newY]?.[newX] !== 0) return true
+      }
+    }
+  }
+  return false
+}
+
+export function spawnPiece(pieceId: PieceId, rotation = 0): PieceState {
+  const matrix = getPieceMatrix(pieceId, rotation)
+  const matrixWidth = matrix[0]?.length ?? 0
+  return {
+    pieceId: pieceId,
+    x: Math.floor(COLS / 2) - Math.floor(matrixWidth / 2),
+    y: 0,
+    rotation: rotation,
+    matrix: matrix
+  }
+}
+
+export function lockPiece(board: number[][], piece: PieceState): number[][] {
+  const newBoard = board.map((row) => [...row])
+
+  for (const [y, row] of piece.matrix.entries()) {
+    for (const [x, cell] of row.entries()) {
+      if (cell !== 0) {
+        const boardY = piece.y + y
+        const boardX = piece.x + x
+
+        if (boardY >= 0 && boardY < TOTAL_ROWS) {
+          const targetRow = newBoard[boardY]
+          targetRow![boardX] = piece.pieceId
+        }
+      }
+    }
+  }
+
+  return newBoard
+}
+
 export function useGameState() {
   const board = ref<number[][]>(createEmptyBoard())
-  const currentPiece = ref<Piece | null>(null)
+  const currentPiece = ref<PieceState | null>(null)
   const heldPieceId = ref<PieceId | null>(null)
   const canHold = ref(true)
   const pieceQueue = ref<number[]>([])

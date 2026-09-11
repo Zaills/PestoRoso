@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PieceName } from '@/game/tetrisEngine'
+import type { PieceName } from '@/game/SharedData.ts'
 
 defineProps<{
   type: PieceName

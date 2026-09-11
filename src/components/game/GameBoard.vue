@@ -12,7 +12,7 @@ import {
   VISIBLE_ROWS,
   type PieceId,
   type PieceName,
-} from '@/game/tetrisEngine'
+} from '@/game/SharedData.ts'
 import { useGameState } from '@/game/useGameState'
 import { useInputHandler } from '@/game/useInputHandler'
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'

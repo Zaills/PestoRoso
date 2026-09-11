@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import jsonShape from '@/assets/tetriminoShape.json'
 import BlockRenderer from '@/components/game/BlockRenderer.vue'
-import type { TetriminoName } from '@/game/tetrisEngine'
+import type { TetriminoName } from '@/game/SharedData.ts'
 import { computed } from 'vue'
 
 const props = defineProps<{

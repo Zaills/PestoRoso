@@ -4,7 +4,7 @@ import { Player } from '../../../assets/PlayerClass'
 import { Game } from '../../../assets/GameClass'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import * as tetrisEngine from '../../../../shared/tetrisEngine'
+import * as tetrisEngine from '../../../assets/tetrisEngine'
 import * as gamesManager from '../../../assets/gamesManager'
 
 // Mock external modules
@@ -15,7 +15,7 @@ vi.mock('../../../assets/gamesManager', () => ({
 vi.mock('../../../../shared/tetrisEngine', async (importOriginal) => {
   const actual =
     await importOriginal<
-      typeof import('../../../../shared/tetrisEngine', { with: { 'resolution-mode': 'require' } })
+      typeof import('../../../assets/tetrisEngine', { with: { 'resolution-mode': 'require' } })
     >()
   return {
     ...actual,
