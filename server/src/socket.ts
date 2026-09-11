@@ -7,6 +7,7 @@ import {
   startGame,
   handlePieceLocked,
   handlePieceHeld,
+  handlePenaltyGameOver,
 } from '../assets/gamesManager'
 import os from 'node:os'
 
@@ -23,6 +24,7 @@ interface ClientToServerEvents {
     penaltyCount: number
   }) => void
   piece_held: () => void
+  penalty_game_over: () => void
 }
 
 interface ServerToClientEvents {
@@ -110,6 +112,10 @@ export const initSocket = (httpServer: HttpServer) => {
 
     socket.on('piece_held', () => {
       handlePieceHeld(socket)
+    })
+
+    socket.on('penalty_game_over', () => {
+      handlePenaltyGameOver(socket)
     })
   })
 

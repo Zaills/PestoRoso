@@ -81,6 +81,15 @@ export function useGameState() {
 
     penaltiesApplied.value += lines
     board.value = applyPenaltyLines(board.value, lines)
+
+    if (isBoardOverflowed(board.value)) {
+      currentPiece.value = null
+      isLanded.value = false
+      socket.emit('penalty_game_over')
+      triggerGameOver()
+      return
+    }
+
     while (currentPiece.value && checkCollision(board.value, currentPiece.value, 0, 0)) {
       currentPiece.value = {
         ...currentPiece.value,

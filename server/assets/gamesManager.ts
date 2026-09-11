@@ -57,6 +57,13 @@ export function handlePieceLocked(
   player.handlePieceLocked(game, room, data)
 }
 
+export function handlePenaltyGameOver(socket: Socket) {
+  const found = findPlayerGame(socket)
+  if (!found) return
+  const { game, room, player } = found
+  player.handlePenaltyGameOver(game, room)
+}
+
 /** Mirrors the client hold swap, so both sides expect the same next piece. */
 export function handlePieceHeld(socket: Socket) {
   const found = findPlayerGame(socket)

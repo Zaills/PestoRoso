@@ -121,6 +121,13 @@ export class Player {
 
     this.syncPenalties(data.penaltyCount)
 
+    if (isBoardOverflowed(this._board)) {
+      this._isGameOver = true
+      this.broadcastBoard()
+      checkForWinner(room)
+      return
+    }
+
     if (data.pieceId !== this._currentPieceId || !Number.isInteger(data.rotation)) {
       this.rejectPlacement(room)
       return
@@ -150,6 +157,28 @@ export class Player {
 
     this.broadcastBoard()
     if (this._isGameOver) checkForWinner(room)
+  }
+
+  /**
+   * The client reports it was buried by the penalty lines it received. It never
+   * locks another piece, so nothing else would make the server replay them: the
+   * pending penalties are applied here and the claim is only honoured if the
+   * server board really overflows.
+   */
+  handlePenaltyGameOver(game: Game, room: string) {
+    if (!game.started || this._isGameOver) return
+
+    const pending = this.penaltiesSent - this.penaltiesApplied
+    if (pending <= 0) return
+
+    const board = applyPenaltyLines(this._board, pending)
+    if (!isBoardOverflowed(board)) return
+
+    this._board = board
+    this.penaltiesApplied = this.penaltiesSent
+    this._isGameOver = true
+    this.broadcastBoard()
+    checkForWinner(room)
   }
 
   // Private Method //
