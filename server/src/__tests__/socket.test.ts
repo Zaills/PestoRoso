@@ -21,6 +21,7 @@ vi.mock('../../assets/gamesManager', () => ({
   sendPenalty: vi.fn(),
   handlePieceLocked: vi.fn(),
   handlePieceHeld: vi.fn(),
+  handlePenaltyGameOver:vi.fn(),
 }))
 
 vi.mock('./socket', () => ({
@@ -174,6 +175,17 @@ describe('Socket Server', () => {
       return new Promise<void>((resolve) => {
         setTimeout(() => {
           expect(gamesManager.handlePieceHeld).toHaveBeenCalledWith(expect.any(Object))
+          resolve()
+        }, 50)
+      })
+    })
+
+    it('should call handlePenaltyGameOver when client emits "penalty_game_over"', () => {
+      clientSocket.emit('penalty_game_over')
+
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          expect(gamesManager.handlePenaltyGameOver).toHaveBeenCalledWith(expect.any(Object))
           resolve()
         }, 50)
       })

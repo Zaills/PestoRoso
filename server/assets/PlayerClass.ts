@@ -168,14 +168,14 @@ export class Player {
   handlePenaltyGameOver(game: Game, room: string) {
     if (!game.started || this._isGameOver) return
 
-    const pending = this.penaltiesSent - this.penaltiesApplied
+    const pending = this.penaltiesSent - this._penaltiesApplied
     if (pending <= 0) return
 
     const board = applyPenaltyLines(this._board, pending)
     if (!isBoardOverflowed(board)) return
 
     this._board = board
-    this.penaltiesApplied = this.penaltiesSent
+    this._penaltiesApplied = this.penaltiesSent
     this._isGameOver = true
     this.broadcastBoard()
     checkForWinner(room)

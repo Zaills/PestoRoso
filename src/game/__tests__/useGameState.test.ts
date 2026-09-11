@@ -643,6 +643,20 @@ describe('useGameState', () => {
       expect(state.currentPiece.value?.y).toBe(8)
       expect(tetrisEngine.checkCollision).toHaveBeenCalledTimes(4)
     })
+
+    it('should end game if overflowed', () => {
+      const state = useGameState()
+      state.initGame([1])
+
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockImplementationOnce(() => {
+        return true
+      })
+
+      state.penaltyLine(2)
+
+      expect(socket.emit).toHaveBeenCalledWith('penalty_game_over')
+
+    })
   })
 
   describe('hold', () => {

@@ -6,7 +6,9 @@ import {
   leaveRoom,
   startGame,
   handlePieceLocked,
-  handlePieceHeld, checkForWinner,
+  handlePieceHeld,
+  checkForWinner,
+  handlePenaltyGameOver,
 } from '../../../assets/gamesManager'
 import { Socket } from 'socket.io'
 import { Player } from '../../../assets/PlayerClass'
@@ -353,6 +355,27 @@ describe('Server Game Manager', () => {
         const holdSpy = vi.spyOn(Player.prototype, 'handlePieceHeld')
 
         handlePieceHeld(socket)
+
+        expect(holdSpy).toHaveBeenCalledOnce()
+        expect(holdSpy).toHaveBeenCalledWith(expect.anything(), room)
+      })
+    })
+
+    describe('handlePenaltyGameOver', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePenaltyGameOver')
+
+        handlePenaltyGameOver(socket)
+
+        expect(holdSpy).not.toHaveBeenCalled()
+      })
+
+      it('should delegate to player.handlePenaltyGameOver when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePenaltyGameOver')
+
+        handlePenaltyGameOver(socket)
 
         expect(holdSpy).toHaveBeenCalledOnce()
         expect(holdSpy).toHaveBeenCalledWith(expect.anything(), room)

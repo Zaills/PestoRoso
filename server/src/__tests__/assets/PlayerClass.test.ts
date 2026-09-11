@@ -279,6 +279,22 @@ describe('PlayerClass', () => {
 
     })
 
+    it('should gameOver if overflows after sendPenaltyToOpponents', () => {
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValue(true)
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValueOnce(false)
+      hostPlayer.handlePieceLocked(game, room, {
+        pieceId: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        penaltyCount: 0,
+      })
+
+      expect(hostPlayer.isGameOver).toBe(true)
+      expect(gamesManager.checkForWinner).toHaveBeenCalled()
+
+    })
+
     describe('advanceToNextPiece', () => {
       it('should gameOver if spawnPiece Collide immediately', () => {
         vi.mocked(tetrisEngine.checkCollision).mockReturnValueOnce(true)
@@ -294,6 +310,26 @@ describe('PlayerClass', () => {
         expect(gamesManager.checkForWinner).toHaveBeenCalledWith(room)
       })
     })
+    it('should set isGameOver to true when the next spawned piece collides (line 193)', () => {
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValue(false)
+      vi.mocked(tetrisEngine.checkCollision).mockReturnValueOnce(true)
+      expect(hostPlayer.isGameOver).toBe(false)
+      hostPlayer.handlePieceLocked(game, room, {
+        pieceId: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        penaltyCount: 0,
+      })
+
+      expect(hostPlayer.isGameOver).toBe(true)
+      expect(tetrisEngine.checkCollision).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        0,
+        0,
+      )
+    })
 
   })
 
@@ -302,5 +338,31 @@ describe('PlayerClass', () => {
     hostPlayer.takeNextPiece(hostSocket, game, room)
 
     expect(game.ensurePieceSupply).not.toHaveBeenCalled()
+  })
+
+  describe('handlePenaltyGameOver', () => {
+    it('should cancel if pending is 0', () => {
+      hostPlayer.handlePenaltyGameOver(game, room)
+
+      expect(tetrisEngine.applyPenaltyLines).not.toHaveBeenCalled()
+    })
+
+    it('should applyPenaltyLines', () => {
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValue(true)
+      hostPlayer.penaltiesSent = 10
+      hostPlayer.handlePenaltyGameOver(game, room)
+
+      expect(tetrisEngine.applyPenaltyLines).toHaveBeenCalled()
+      expect(gamesManager.checkForWinner).toHaveBeenCalled()
+    })
+
+    it('should not check for winner if overflow', () => {
+      vi.mocked(tetrisEngine.isBoardOverflowed).mockReturnValue(false)
+      hostPlayer.penaltiesSent = 10
+      hostPlayer.handlePenaltyGameOver(game, room)
+
+      expect(tetrisEngine.applyPenaltyLines).toHaveBeenCalled()
+      expect(gamesManager.checkForWinner).not.toHaveBeenCalled()
+    })
   })
 })
