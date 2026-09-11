@@ -24,7 +24,7 @@ describe('Waiting Room', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   afterAll(() => {
@@ -41,151 +41,207 @@ describe('Waiting Room', () => {
     isHost: false,
   }
 
-  it('render list correctly', () => {
-    setMockUrl('http://localhost:3000/roomA/Bob')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: defaultProps,
+
+  describe('startGame', () => {
+    it('Start Game button should be define for the 1st User', async () => {
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: { ...defaultProps, isHost: true },
+      })
+
+      const buttons = wrapper.findAll('button')
+      const startButton = buttons.find((b) => b.text() === 'START GAME')
+
+      expect(startButton).toBeDefined()
+
+      await startButton?.trigger('click')
+      expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: 'roomA' })
     })
 
-    const icons = wrapper.findAllComponents({ name: 'PlayerIcon' })
-    expect(icons.length).toBe(3)
+    it('should not startGame if player not Host', async () => {
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: { ...defaultProps, isHost: false },
+      })
+      wrapper.vm.startGame()
 
-    expect(icons[0].props('player')).toBe('Alex')
-    expect(icons[1].props('player')).toBe('Bob')
-    expect(icons[2].props('player')).toBe('Charlie')
-  })
-
-  it('Start Game button should be define for the 1st User', async () => {
-    setMockUrl('http://localhost:3000/roomA/Alex')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: { ...defaultProps, isHost: true },
+      expect(socket.emit).not.toHaveBeenCalledWith('start_game', { name: 'Alex', room: 'roomA' })
     })
 
-    const buttons = wrapper.findAll('button')
-    const startButton = buttons.find((b) => b.text() === 'START GAME')
+    it('Start Game button should not be define for the 2st User', () => {
+      setMockUrl('http://localhost:3000/roomA/Bob')
+      const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
 
-    expect(startButton).toBeDefined()
+      const buttons = wrapper.findAll('button')
+      const startButton = buttons.find((b) => b.text() === 'START GAME')
 
-    await startButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: 'roomA' })
-  })
-
-  it('Start Game button should not be define for the 2st User', () => {
-    setMockUrl('http://localhost:3000/roomA/Bob')
-    const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
-
-    const buttons = wrapper.findAll('button')
-    const startButton = buttons.find((b) => b.text() === 'START GAME')
-
-    expect(startButton).toBeUndefined()
-  })
-
-  it('caps the roster at 5 players and blocks a viewer from taking a 6th slot', async () => {
-    setMockUrl('http://localhost:3000/roomA/Frank')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: {
-        playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
-        ViewerList: ['Frank'],
-        isHost: false,
-      },
+      expect(startButton).toBeUndefined()
     })
 
-    expect(wrapper.find('.column-title').text()).toBe('PLAYERS 5/5')
-    expect(wrapper.find('.room-full').exists()).toBe(true)
+    it('should listen on Enter key press', () => {
+      setMockUrl('')
+      const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
+      const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
 
-    const buttons = wrapper.findAll('button')
-    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
-    expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: {
+          playerList: ['Alex'],
+          ViewerList: [],
+          isHost: false,
+        },
+      })
 
-    await changeTeamButton?.trigger('click')
-    expect(socket.emit).not.toHaveBeenCalled()
-  })
+      expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
 
-  it('lets a player of a full room step down to the viewers', async () => {
-    setMockUrl('http://localhost:3000/roomA/Eve')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: {
-        playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
-        ViewerList: [],
-        isHost: false,
-      },
+      wrapper.unmount()
+
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     })
 
-    const buttons = wrapper.findAll('button')
-    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
-    expect(changeTeamButton?.attributes('disabled')).toBeUndefined()
+    it('should startGame on enter key pressed', () => {
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      mount(WaitingRoom, {
+        global: { stubs },
+        props: { ...defaultProps, isHost: true },
+      })
 
-    await changeTeamButton?.trigger('click')
-    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomA' })
+      const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true })
+
+      window.dispatchEvent(event)
+
+      expect(socket.emit).toHaveBeenCalledWith('start_game', { name: 'Alex', room: 'roomA' })
+    })
   })
 
-  it('hides Start Game from a namesake of the host', () => {
-    // The server knows a single host: a namesake never receives the host flag.
-    setMockUrl('http://localhost:3000/roomA/Alex')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: { playerList: ['Alex', 'Alex'], ViewerList: [], isHost: false },
+  describe('render', () => {
+    it('render list correctly', () => {
+      setMockUrl('http://localhost:3000/roomA/Bob')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: defaultProps,
+      })
+
+      const icons = wrapper.findAllComponents({ name: 'PlayerIcon' })
+      expect(icons.length).toBe(3)
+
+      expect(icons[0].props('player')).toBe('Alex')
+      expect(icons[1].props('player')).toBe('Bob')
+      expect(icons[2].props('player')).toBe('Charlie')
     })
 
-    const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
-    expect(startButton).toBeUndefined()
-    expect(wrapper.find('.name-clash').exists()).toBe(false)
-  })
+    it('hides Start Game from a namesake of the host', () => {
+      // The server knows a single host: a namesake never receives the host flag.
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: { playerList: ['Alex', 'Alex'], ViewerList: [], isHost: false },
+      })
 
-  it('keeps Start Game for the real host even with a namesake in the room', () => {
-    setMockUrl('http://localhost:3000/roomA/Alex')
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: { playerList: ['Alex', 'Alex'], ViewerList: [], isHost: true },
+      const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
+      expect(startButton).toBeUndefined()
+      expect(wrapper.find('.name-clash').exists()).toBe(false)
     })
 
-    const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
-    expect(startButton).toBeDefined()
-    expect(wrapper.find('.name-clash').exists()).toBe(false)
-  })
+    it('keeps Start Game for the real host even with a namesake in the room', () => {
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: { playerList: ['Alex', 'Alex'], ViewerList: [], isHost: true },
+      })
 
-  it('does not warn about names when the host name is unique', () => {
-    setMockUrl('http://localhost:3000/roomA/Alex')
-    const wrapper = mount(WaitingRoom, { global: { stubs }, props: defaultProps })
-
-    expect(wrapper.find('.name-clash').exists()).toBe(false)
-  })
-
-  it('change_team when the Change Team button is clicked', async () => {
-    setMockUrl('http://localhost:3000/roomX/Charlie')
-    const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
-
-    const buttons = wrapper.findAll('button')
-    const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
-
-    await changeTeamButton?.trigger('click')
-
-    expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomX' })
-  })
-
-  it('prevents a viewer from joining the player team when the room is full', async () => {
-    setMockUrl('http://localhost:3000/roomA/Viewer1')
-
-    const wrapper = mount(WaitingRoom, {
-      global: { stubs },
-      props: {
-        playerList: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5'],
-        ViewerList: ['Viewer1'],
-        isHost: false,
-      },
+      const startButton = wrapper.findAll('button').find((b) => b.text() === 'START GAME')
+      expect(startButton).toBeDefined()
+      expect(wrapper.find('.name-clash').exists()).toBe(false)
     })
 
-    const changeTeamButton = wrapper.findAll('button').find((b) => b.text() === 'CHANGE TEAM')
-    expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+    it('does not warn about names when the host name is unique', () => {
+      setMockUrl('http://localhost:3000/roomA/Alex')
+      const wrapper = mount(WaitingRoom, { global: { stubs }, props: defaultProps })
 
-    wrapper.vm.changeTeam()
+      expect(wrapper.find('.name-clash').exists()).toBe(false)
+    })
 
-    expect(socket.emit).not.toHaveBeenCalled()
   })
+
+  describe('playerList', () => {
+
+    it('caps the roster at 5 players and blocks a viewer from taking a 6th slot', async () => {
+      setMockUrl('http://localhost:3000/roomA/Frank')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: {
+          playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
+          ViewerList: ['Frank'],
+          isHost: false,
+        },
+      })
+
+      expect(wrapper.find('.column-title').text()).toBe('PLAYERS 5/5')
+      expect(wrapper.find('.room-full').exists()).toBe(true)
+
+      const buttons = wrapper.findAll('button')
+      const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
+      expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+
+      await changeTeamButton?.trigger('click')
+      expect(socket.emit).not.toHaveBeenCalled()
+    })
+
+    it('lets a player of a full room step down to the viewers', async () => {
+      setMockUrl('http://localhost:3000/roomA/Eve')
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: {
+          playerList: ['Alex', 'Bob', 'Charlie', 'Dave', 'Eve'],
+          ViewerList: [],
+          isHost: false,
+        },
+      })
+
+      const buttons = wrapper.findAll('button')
+      const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
+      expect(changeTeamButton?.attributes('disabled')).toBeUndefined()
+
+      await changeTeamButton?.trigger('click')
+      expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomA' })
+    })
+
+    it('change_team when the Change Team button is clicked', async () => {
+      setMockUrl('http://localhost:3000/roomX/Charlie')
+      const wrapper = mount(WaitingRoom, { props: defaultProps, global: { stubs } })
+
+      const buttons = wrapper.findAll('button')
+      const changeTeamButton = buttons.find((b) => b.text() === 'CHANGE TEAM')
+
+      await changeTeamButton?.trigger('click')
+
+      expect(socket.emit).toHaveBeenCalledWith('change_team', { room: 'roomX' })
+    })
+
+    it('prevents a viewer from joining the player team when the room is full', async () => {
+      setMockUrl('http://localhost:3000/roomA/Viewer1')
+
+      const wrapper = mount(WaitingRoom, {
+        global: { stubs },
+        props: {
+          playerList: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5'],
+          ViewerList: ['Viewer1'],
+          isHost: false,
+        },
+      })
+
+      const changeTeamButton = wrapper.findAll('button').find((b) => b.text() === 'CHANGE TEAM')
+      expect(changeTeamButton?.attributes('disabled')).toBeDefined()
+
+      wrapper.vm.changeTeam()
+
+      expect(socket.emit).not.toHaveBeenCalled()
+    })
+  })
+
   it('falls back to empty strings when url fails or is empty', async () => {
     setMockUrl('')
 
