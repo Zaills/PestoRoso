@@ -75,6 +75,7 @@ export class Game {
     } else {
       this.checkForWinner()
     }
+    this._updateGameRoom()
   }
 
   changeTeam(socket: Socket) {
