@@ -2,17 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Socket } from 'socket.io'
 import { Player } from '../../../assets/PlayerClass'
 import { Game } from '../../../assets/GameClass'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import * as tetrisEngine from '../../../assets/tetrisEngine'
 import * as gamesManager from '../../../assets/gamesManager'
-
 // Mock external modules
 vi.mock('../../../assets/gamesManager', () => ({
   checkForWinner: vi.fn(),
 }))
 
-vi.mock('../../../../shared/tetrisEngine', async (importOriginal) => {
+vi.mock('../../../assets/tetrisEngine', async (importOriginal) => {
   const actual =
     await importOriginal<
       typeof import('../../../assets/tetrisEngine', { with: { 'resolution-mode': 'require' } })
