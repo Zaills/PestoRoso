@@ -2,13 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import type { Server } from 'socket.io'
 import { io as Client, type Socket as ClientSocket } from 'socket.io-client'
 import { createServer } from 'http'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { getLocalIpAddress, initSocket } from '../socket.ts'
 import type { AddressInfo } from 'node:net'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import * as gamesManager from '../../assets/gamesManager.ts'
 
 vi.mock('../../assets/gamesManager', () => ({

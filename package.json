@@ -11,10 +11,10 @@
     "test:unit": "vitest",
     "coverage": "vitest run --coverage",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build",
+    "type-check": "vue-tsc --build tsconfig.node.json tsconfig.app.json",
     "lint": "run-s lint:*",
-    "lint:oxlint": "oxlint . --fix",
-    "lint:eslint": "eslint . --fix --cache",
+    "lint:oxlint": "oxlint . --fix --ignore-pattern \"**/__tests__/**\"",
+    "lint:eslint": "eslint . --fix --cache --ignore-pattern \"**/__tests__/**\"",
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
@@ -32,7 +32,7 @@
     "@vitest/eslint-plugin": "^1.6.9",
     "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/test-utils": "^2.4.6",
-    "@vue/tsconfig": "^0.8.1",
+    "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.50.0",
@@ -42,11 +42,12 @@
     "npm-run-all2": "^8.0.4",
     "oxlint": "~1.50.0",
     "prettier": "3.8.1",
-    "typescript": "~5.9.3",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^7.3.1",
     "vite-plugin-vue-devtools": "^8.0.6",
     "vitest": "^4.0.18",
-    "vue-tsc": "^3.2.5"
+    "vue-tsc": "^3.3.12"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

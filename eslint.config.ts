@@ -16,6 +16,8 @@ export default defineConfigWithVueTs(
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
+  { ignores: ['**/__tests__/**', 'dist/**', 'coverage/**'] },
+
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
   ...pluginVue.configs['flat/essential'],

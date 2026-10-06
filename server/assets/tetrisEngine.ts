@@ -2,23 +2,19 @@ import { Piece } from './PieceClass'
 import {
   COLS,
   getPieceMatrix,
-  PieceId,
+  type PieceId,
   TOTAL_ROWS,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
 } from '../../shared/ShareData'
 
 export {
   createEmptyBoard,
   clearLines,
   levelForLines,
-  PieceId,
+  type PieceId,
   applyPenaltyLines,
   isBoardOverflowed,
   getPieceMatrix,
   scoreForLines,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
 } from '../../shared/ShareData'
 
 /**
