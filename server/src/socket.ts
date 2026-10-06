@@ -75,6 +75,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   `http://${getLocalIpAddress()}:5173`,
+  `http://3f1.42angouleme.fr:5173`,
+  '/https:\\/\\/\\d\\w\\d\\.42angouleme\\.fr/gm',
 ]
 
 export const initSocket = (httpServer: HttpServer) => {
