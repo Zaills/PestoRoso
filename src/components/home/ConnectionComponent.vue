@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 const name = ref('')
@@ -7,13 +7,27 @@ const room = ref('')
 const roomInput = ref<HTMLInputElement | null>(null)
 const router = useRouter()
 
+const ID_REGEX = /^[a-zA-Z0-9_]{1,16}$/
+const sanitize = (value: string) => value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 16)
+
+watch(name, (value) => {
+  const clean = sanitize(value)
+  if (clean !== value) name.value = clean
+})
+watch(room, (value) => {
+  const clean = sanitize(value)
+  if (clean !== value) room.value = clean
+})
+
+const isValid = computed(() => ID_REGEX.test(name.value) && ID_REGEX.test(room.value))
+
 const focusRoom = () => {
   roomInput.value?.focus()
 }
 
 const joinRoom = () => {
-  if (name.value !== '' && room.value !== '') {
-    router.push(room.value + '/' + name.value)
+  if (isValid.value) {
+    router.push({ name: 'game', params: { roomId: room.value, name: name.value } })
   }
 }
 </script>
@@ -22,10 +36,9 @@ const joinRoom = () => {
   <div class="login-container">
     <span class="shadow-container disabled-shadow">
       <input
-        v-model.trim="name"
+        v-model="name"
         class="input-chanfrein"
         placeholder="NAME"
-        minlength="2"
         maxlength="16"
         @keyup.enter="focusRoom"
       />
@@ -34,17 +47,20 @@ const joinRoom = () => {
     <span class="shadow-container disabled-shadow">
       <input
         ref="roomInput"
-        v-model.trim="room"
+        v-model="room"
         class="input-chanfrein"
         placeholder="ROOM"
-        minlength="2"
         maxlength="16"
         @keyup.enter="joinRoom"
       />
     </span>
 
-    <span class="shadow-container" :class="{ 'disabled-shadow': room === '' || name === '' }">
-      <RouterLink v-if="room != '' && name != ''" :to="room + '/' + name" class="joinButton">
+    <span class="shadow-container" :class="{ 'disabled-shadow': !isValid }">
+      <RouterLink
+        v-if="isValid"
+        :to="{ name: 'game', params: { roomId: room, name: name } }"
+        class="joinButton"
+      >
         JOIN ROOM
       </RouterLink>
       <button v-else class="joinButton" disabled>JOIN ROOM</button>
