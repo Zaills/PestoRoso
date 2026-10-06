@@ -12,7 +12,7 @@ import {
   VISIBLE_ROWS,
   type PieceId,
   type PieceName,
-} from '@/game/tetrisEngine'
+} from '@/game/SharedData.ts'
 import { useGameState } from '@/game/useGameState'
 import { useInputHandler } from '@/game/useInputHandler'
 import SpectrumComponent from '@/components/game/SpectrumComponent.vue'
@@ -49,6 +49,7 @@ const {
   winGame,
   addPieces,
   penaltyLine,
+  resyncBoard,
   moveLeft,
   moveRight,
   softDrop,
@@ -78,6 +79,11 @@ function onPenalty(lines: number) {
   penaltyLine(lines)
 }
 
+// The server refused a placement, or our board drifted from its own: its version wins.
+function onResync(payload: { board: number[][]; pieceId: PieceId | null; penaltyCount: number }) {
+  resyncBoard(payload)
+}
+
 function onStart(roster: RosterEntry[]) {
   winnerId.value = null
   winnerName.value = ''
@@ -97,6 +103,7 @@ onMounted(() => {
   socket.on('pieces_batch', onPiecesBatch)
   socket.on('more_pieces', onMorePieces)
   socket.on('get_penalty', onPenalty)
+  socket.on('board_resync', onResync)
   socket.on('all_player', onStart)
   socket.on('game_end', onGameEnd)
 })
@@ -105,6 +112,7 @@ onUnmounted(() => {
   socket.off('pieces_batch', onPiecesBatch)
   socket.off('more_pieces', onMorePieces)
   socket.off('get_penalty', onPenalty)
+  socket.off('board_resync', onResync)
   socket.off('all_player', onStart)
   socket.off('game_end', onGameEnd)
 })
@@ -321,7 +329,9 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 }
 
 .label {
-  text-align: right;
+  text-align: center;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.1rem;
   color: black;
   background-color: white;
 }
@@ -329,15 +339,20 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 .game-over,
 .game-win {
   position: absolute;
+  font-family: 'Titan One', sans-serif;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: rgb(0 0 0 / 0.7);
   color: white;
-  font-size: 28px;
+  font-size: 2rem;
   font-weight: bold;
   letter-spacing: 2px;
+}
+
+.game-over {
+  color: #fa1e1e;
 }
 
 .game-win {
@@ -347,10 +362,11 @@ const opponentColumns = computed(() => (opponents.value.length > 2 ? 2 : 1))
 .score-panel {
   display: flex;
   gap: 16px;
+  font-family: 'Titan One', sans-serif;
+  font-size: 1.2rem;
   justify-content: center;
   color: white;
   padding: 4px;
-  font-size: 14px;
 }
 
 .end-banner {

@@ -25,7 +25,7 @@ server/
   assets/        Room and game lifecycle (gamesManager)
 ```
 
-The board logic in `src/game/tetrisEngine.ts` is written with pure functions and
+The board logic in `src/game/SharedData.ts` is written with pure functions and
 no `this`, as required by the subject.
 
 ## Running

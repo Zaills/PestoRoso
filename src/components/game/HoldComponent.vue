@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PieceComponent from '@/components/game/PieceComponent.vue'
-import type { PieceName, TetriminoName } from '@/game/tetrisEngine'
+import type { PieceName, TetriminoName } from '@/game/SharedData.ts'
 import { computed } from 'vue'
 
 const props = defineProps<{
@@ -8,14 +8,12 @@ const props = defineProps<{
   pieceName: PieceName | null
 }>()
 
-// Penalty blocks are never held, so only the seven tetriminoes are rendered.
 const heldPiece = computed<TetriminoName | null>(() =>
   props.pieceName !== null && props.pieceName !== 'penalty' ? props.pieceName : null,
 )
 </script>
 
 <template>
-  <!-- "I" and "O" need their own offsets to sit centred in the hold box. -->
   <piece-component
     v-if="heldPiece === 'I'"
     :type="heldPiece"

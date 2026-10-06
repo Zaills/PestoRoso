@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node18",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    // `shared/` sits above this folder, so the common root is the repository root.
+    "rootDir": ".."
+  },
+  "include": ["src/**/*", "assets/**/*", "../shared/**/*"],
+
+  // The repository root is an ES module package, so Node would otherwise load `shared/`
+  // as ESM while this server runs as CommonJS. The engine is plain TypeScript with no
+  // module specific syntax, so it is simply compiled as CommonJS here.
+  "ts-node": {
+    "moduleTypes": {
+      "../shared/**/*": "cjs"
+    }
+  }
+}

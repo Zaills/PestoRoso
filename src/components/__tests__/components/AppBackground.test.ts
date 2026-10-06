@@ -38,4 +38,12 @@ describe('Background', () => {
     const updatedStyle = wrapper.find('.main-bg-container').attributes('style')
     expect(updatedStyle).toBeDefined()
   })
+
+  it('SelectedImage be empty if no image is set', async () => {
+    vi.spyOn(Math, 'floor').mockReturnValue(10000)
+    const wrapper = mount(AppBackground)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    expect(wrapper.vm.selectedImage.value).toBe(undefined)
+  })
 })

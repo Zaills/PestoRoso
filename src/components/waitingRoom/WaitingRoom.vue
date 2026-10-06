@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { socket } from '@/socket.ts'
 import PlayerIcon from '@/components/waitingRoom/PlayerIcon.vue'
 
@@ -27,8 +27,24 @@ function changeTeam() {
 }
 
 function startGame() {
+  // Sécurité additionnelle côté client
+  if (!props.isHost) return
   socket.emit('start_game', { room, name })
 }
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' && props.isHost) {
+    startGame()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>

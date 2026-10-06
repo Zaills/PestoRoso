@@ -1,8 +1,14 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import GameBoard from '@/components/game/GameBoard.vue'
 import { ref } from 'vue'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import { useGameState } from '@/game/useGameState'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import { socket } from '@/socket.ts'
 
 vi.mock('@/socket', () => ({
@@ -49,6 +55,7 @@ const mockGameState = {
   winGame: vi.fn(),
   addPieces: vi.fn(),
   penaltyLine: vi.fn(),
+  resyncBoard: vi.fn(),
   moveLeft: vi.fn(),
   moveRight: vi.fn(),
   softDrop: vi.fn(),
@@ -194,6 +201,7 @@ describe('GameBoard', () => {
       expect(socket.on).toHaveBeenCalledWith('pieces_batch', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('more_pieces', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('get_penalty', expect.any(Function))
+      expect(socket.on).toHaveBeenCalledWith('board_resync', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('all_player', expect.any(Function))
       expect(socket.on).toHaveBeenCalledWith('game_end', expect.any(Function))
 
@@ -202,6 +210,7 @@ describe('GameBoard', () => {
       expect(socket.off).toHaveBeenCalledWith('pieces_batch', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('more_pieces', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('get_penalty', expect.any(Function))
+      expect(socket.on).toHaveBeenCalledWith('board_resync', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('all_player', expect.any(Function))
       expect(socket.off).toHaveBeenCalledWith('game_end', expect.any(Function))
     })
@@ -223,6 +232,9 @@ describe('GameBoard', () => {
 
       socketEvents['get_penalty'](2)
       expect(mockGameState.penaltyLine).toHaveBeenCalledWith(2)
+
+      socketEvents['board_resync']()
+      expect(mockGameState.resyncBoard).toHaveBeenCalled()
     })
 
     it('handles the multiplayer all_player socket event and renders spectrum components for peer IDs', async () => {
@@ -345,5 +357,10 @@ describe('GameBoard', () => {
 
     const blocks = wrapper.findAll('.block')
     expect(blocks.length).toBeGreaterThan(0)
+  })
+
+  it('triggers resyncBoard when board_resync socket event occurs', () => {
+    mount(GameBoard, { props: { id: 1 } })
+
   })
 })

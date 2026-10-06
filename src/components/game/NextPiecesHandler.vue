@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import PieceComponent from '@/components/game/PieceComponent.vue'
 import { computed } from 'vue'
-import { PIECE_NAMES, type PieceId, type TetriminoName } from '@/game/tetrisEngine'
+import { PIECE_NAMES, type PieceId, type TetriminoName } from '@/game/SharedData.ts'
 
 const props = defineProps<{
   cellSize: number
   pieceIds: number[]
 }>()
 
-// The queue only ever holds the seven tetriminoes, never a penalty block.
 const pieces = computed<TetriminoName[]>(() =>
   props.pieceIds
     .map((id) => PIECE_NAMES[id as PieceId])
@@ -18,7 +17,6 @@ const pieces = computed<TetriminoName[]>(() =>
 
 <template>
   <template v-for="(type, index) in pieces" :key="index">
-    <!-- "I" and "O" need their own offsets to sit centred in their slot. -->
     <piece-component
       v-if="type === 'I'"
       :type="type"

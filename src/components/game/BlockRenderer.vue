@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PieceName } from '@/game/tetrisEngine'
+import type { PieceName } from '@/game/SharedData.ts'
 
 defineProps<{
   type: PieceName
@@ -54,13 +54,11 @@ defineProps<{
   background-color: #ff8c00;
 }
 
-/* Penalty lines received from opponents: flat grey, they cannot be cleared. */
 .cell.penalty {
   background-color: #6a6a6a;
   box-shadow: none;
 }
 
-/* Landing preview of the current piece. */
 .cell.ghost {
   opacity: 0.3;
 }

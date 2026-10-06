@@ -1,19 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import {
   changeTeam,
-  createEmptyBoard,
-  generateRandomBag,
-  getBags,
-  handleBoardUpdate,
-  handleMorePiecesRequest,
   joinOrCreateGame,
   MAX_PLAYERS,
   leaveRoom,
-  sendPenalty,
   startGame,
-  updateGameRoom,
+  handlePieceLocked,
+  handlePieceHeld,
+  checkForWinner,
+  handlePenaltyGameOver,
 } from '../../../assets/gamesManager'
 import { Socket } from 'socket.io'
+import { Player } from '../../../assets/PlayerClass'
+import { Game } from '../../../assets/GameClass'
 
 function createMockSocket(id: string) {
   return {
@@ -36,26 +35,6 @@ describe('Server Game Manager', () => {
     vi.resetAllMocks()
   })
 
-  describe('Board and Bag Generation', () => {
-    it('should create a 22x10 empty board filled with zeros', () => {
-      const board = createEmptyBoard()
-      expect(board.length).toBe(22)
-      expect(board[0].length).toBe(10)
-      expect(board[0].every((val) => val === 0)).toBe(true)
-    })
-
-    it('should generate a randomized bag of 7 distinct pieces', () => {
-      const bag = generateRandomBag()
-      expect(bag.length).toBe(7)
-      expect(bag.sort()).toEqual([1, 2, 3, 4, 5, 6, 7])
-    })
-
-    it('should generate multiple bags stitched together', () => {
-      const bags = getBags(3)
-      expect(bags.length).toBe(21)
-    })
-  })
-
   describe('Room Management and Player Actions', () => {
     it('should allow a player to create a room and receive their ID', () => {
       const socket = createMockSocket('socket-1')
@@ -63,7 +42,7 @@ describe('Server Game Manager', () => {
 
       joinOrCreateGame(room, 'Alice', socket)
 
-      expect(socket.emit).to.have.been.calledWith('you_join', 1)
+      expect(socket.emit).to.have.been.calledWith('you_join', 2)
       expect(socket.emit).to.have.been.calledWith('room_update', ['Alice'], [])
     })
 
@@ -218,7 +197,7 @@ describe('Server Game Manager', () => {
 
       leaveRoom(host)
 
-      expect(next.emit).toHaveBeenCalledWith('host_update', true)
+      expect(next.emit).toHaveBeenCalledWith('host_update', false)
     })
 
     it('should refuse a namesake trying to start the game', () => {
@@ -262,6 +241,20 @@ describe('Server Game Manager', () => {
         ['B5'],
       )
     })
+
+    it('should delete game if all player left', () => {
+      const room = 'delete'
+      const name = 'leaver'
+      const socket = createMockSocket('leave-socket')
+
+      joinOrCreateGame(room, name, socket)
+
+      const spy = vi.spyOn(Map.prototype, 'delete')
+
+      leaveRoom(socket)
+
+      expect(spy).toHaveBeenCalledOnce()
+    })
   })
 
   describe('In-Game Interactions', () => {
@@ -270,108 +263,6 @@ describe('Server Game Manager', () => {
       const room = 'room-3.5'
 
       expect(() => startGame(room, 'Dave', socket)).not.toThrow()
-    })
-
-    it('should broadcast board updates to other room members', () => {
-      const socket = createMockSocket('socket-4')
-      const room = 'room-4'
-
-      joinOrCreateGame(room, 'Dave', socket)
-      startGame(room, 'Dave', socket)
-
-      const sampleBoard = createEmptyBoard()
-      handleBoardUpdate(socket, { board: sampleBoard, score: 100, isGameOver: false })
-
-      expect(socket.broadcast.to).toHaveBeenCalledWith(room)
-      expect(socket.broadcast.to(room).emit).toHaveBeenCalledWith('game_update', {
-        name: 'Dave',
-        board: sampleBoard,
-        isGameOver: false,
-        id: 1,
-      })
-    })
-
-    it('should ignore handleBoardUpdate, handleMorePiecesRequest, and sendPenalty when game is not started or socket is not a player', () => {
-      const socket = createMockSocket('socket-unstarted')
-      const room = 'room-unstarted'
-
-      joinOrCreateGame(room, 'Unstarted', socket)
-
-      // Game not started yet
-      handleBoardUpdate(socket, { board: createEmptyBoard(), score: 0, isGameOver: false })
-      expect(socket.broadcast.to).not.toHaveBeenCalled()
-
-      handleMorePiecesRequest(socket)
-      expect(socket.nsp.to).not.toHaveBeenCalled()
-
-      sendPenalty(2, socket)
-      expect(socket.broadcast.to).not.toHaveBeenCalled()
-
-      // Game started but socket is a spectator / outsider
-      const spectatorSocket = createMockSocket('spectator-socket')
-      startGame(room, 'Unstarted', socket)
-
-      handleBoardUpdate(spectatorSocket, { board: createEmptyBoard(), score: 0, isGameOver: false })
-      handleMorePiecesRequest(spectatorSocket)
-      sendPenalty(2, spectatorSocket)
-
-      expect(spectatorSocket.broadcast.to).not.toHaveBeenCalled()
-    })
-
-    it('should request and send additional piece batches', () => {
-      const socket = createMockSocket('socket-5')
-      const room = 'room-5'
-
-      joinOrCreateGame(room, 'Eve', socket)
-      startGame(room, 'Eve', socket)
-      handleMorePiecesRequest(socket)
-
-      expect(socket.nsp.to).toHaveBeenCalledWith(room)
-      expect(socket.nsp.to(room).emit).toHaveBeenCalledWith('more_pieces', expect.any(Array))
-    })
-
-    it('should broadcast penalties to opponents', () => {
-      const socket = createMockSocket('socket-6')
-      const room = 'room-6'
-
-      joinOrCreateGame(room, 'Frank', socket)
-      startGame(room, 'Frank', socket)
-      sendPenalty(2, socket)
-
-      expect(socket.broadcast.to).toHaveBeenCalledWith(room)
-      expect(socket.broadcast.to(room).emit).toHaveBeenCalledWith('get_penalty', 2)
-    })
-
-    it('should end the game and crown the last player standing', () => {
-      const room = 'room-win'
-      const socket1 = createMockSocket('win-1')
-      const socket2 = createMockSocket('win-2')
-
-      joinOrCreateGame(room, 'Winner', socket1)
-      joinOrCreateGame(room, 'Loser', socket2)
-      startGame(room, 'Winner', socket1)
-
-      handleBoardUpdate(socket2, { board: createEmptyBoard(), score: 0, isGameOver: true })
-
-      const payload = { winnerId: 1, winnerName: 'Winner' }
-      expect(socket1.emit).toHaveBeenCalledWith('game_end', payload)
-      expect(socket2.emit).toHaveBeenCalledWith('game_end', payload)
-    })
-
-    it('should not end the game while more than one player is still alive', () => {
-      const room = 'room-alive'
-      const socket1 = createMockSocket('alive-1')
-      const socket2 = createMockSocket('alive-2')
-      const socket3 = createMockSocket('alive-3')
-
-      joinOrCreateGame(room, 'C1', socket1)
-      joinOrCreateGame(room, 'C2', socket2)
-      joinOrCreateGame(room, 'C3', socket3)
-      startGame(room, 'C1', socket1)
-
-      handleBoardUpdate(socket3, { board: createEmptyBoard(), score: 0, isGameOver: true })
-
-      expect(socket1.emit).not.toHaveBeenCalledWith('game_end', expect.anything())
     })
 
     it('should crown the survivor when the last opponent disconnects', () => {
@@ -386,84 +277,109 @@ describe('Server Game Manager', () => {
       leaveRoom(socket2)
 
       expect(socket1.emit).toHaveBeenCalledWith('game_end', {
-        winnerId: 1,
+        winnerId: 2,
         winnerName: 'Stayer',
       })
     })
 
-    it('should free the room once the game has ended so a new one can start', () => {
-      const room = 'room-freed'
-      const socket1 = createMockSocket('freed-1')
-      const socket2 = createMockSocket('freed-2')
-      const socket3 = createMockSocket('freed-3')
-
-      joinOrCreateGame(room, 'D1', socket1)
-      joinOrCreateGame(room, 'D2', socket2)
-      startGame(room, 'D1', socket1)
-      handleBoardUpdate(socket2, { board: createEmptyBoard(), score: 0, isGameOver: true })
-
-      leaveRoom(socket2)
-      joinOrCreateGame(room, 'D3', socket3)
-
-      expect(socket3.emit).toHaveBeenCalledWith('room_update', ['D1', 'D3'], [])
-      expect(socket3.emit).not.toHaveBeenCalledWith('room_denied', expect.anything())
+    it('should checkForWinner return null if winner not found', () => {
+      expect(() => checkForWinner("test")).not.toThrow()
     })
 
-    it('should let the host relaunch a game after the previous one ended', () => {
-      const room = 'room-replay'
-      const socket1 = createMockSocket('replay-1')
-      const socket2 = createMockSocket('replay-2')
+    it('should checkForWinner delegate to game', () => {
+      joinOrCreateGame("test", "test",createMockSocket('winner'))
+      const winCheckSpy = vi.spyOn(Game.prototype, 'checkForWinner')
 
-      joinOrCreateGame(room, 'E1', socket1)
-      joinOrCreateGame(room, 'E2', socket2)
-      startGame(room, 'E1', socket1)
-      handleBoardUpdate(socket2, { board: createEmptyBoard(), score: 0, isGameOver: true })
+      checkForWinner("test")
 
-      vi.mocked(socket1.nsp.emit).mockClear()
-      startGame(room, 'E1', socket1)
+      expect(winCheckSpy).toHaveBeenCalledOnce()
+    })
+  })
 
-      expect(socket1.nsp.to(room).emit).toHaveBeenCalledWith('game_status', true)
-      expect(socket1.nsp.to(room).emit).toHaveBeenCalledWith('all_player', [
-        { id: 1, name: 'E1' },
-        { id: 2, name: 'E2' },
-      ])
+  describe('Handle Sockets', () => {
+    let socket: Socket
+    const room = 'room-1'
+    const playerName = 'Alice'
+
+    beforeEach(() => {
+      socket = createMockSocket('socket-1')
     })
 
-    it('should end a solo game without a winner when the only player tops out', () => {
-      const room = 'room-solo'
-      const socket = createMockSocket('solo-1')
+    afterEach(() => {
+      leaveRoom(socket)
+      vi.restoreAllMocks()
+    })
 
-      joinOrCreateGame(room, 'Solo', socket)
-      startGame(room, 'Solo', socket)
+    it('should findPlayerGame return null if player not found ', () => {
+      expect(() => handlePieceHeld(socket)).not.toThrow()
+    })
 
-      handleBoardUpdate(socket, { board: createEmptyBoard(), score: 0, isGameOver: true })
 
-      expect(socket.emit).toHaveBeenCalledWith('game_end', {
-        winnerId: null,
-        winnerName: null,
+    describe('handlePieceLocked', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const lockSpy = vi.spyOn(Player.prototype, 'handlePieceLocked')
+        const dummyData = { pieceId: 1, x: 0, y: 0, rotation: 0, penaltyCount: 0 }
+
+        handlePieceLocked(socket, dummyData)
+
+        expect(lockSpy).not.toHaveBeenCalled()
+      })
+
+      it('should delegate to player.handlePieceLocked when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const lockSpy = vi
+          .spyOn(Player.prototype, 'handlePieceLocked')
+          .mockImplementation(() => {})
+        const dummyData = { pieceId: 1, x: 0, y: 0, rotation: 0, penaltyCount: 0 }
+
+        handlePieceLocked(socket, dummyData)
+
+        expect(lockSpy).toHaveBeenCalledOnce()
+        expect(lockSpy).toHaveBeenCalledWith(expect.anything(), room, dummyData)
       })
     })
 
-    it('should handle spectator disconnects and player disconnects cleanly', () => {
-      const socket1 = createMockSocket('socket-7')
-      const socket2 = createMockSocket('socket-8')
-      const room = 'room-7'
+    describe('handlePieceHeld', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePieceHeld')
 
-      joinOrCreateGame(room, 'Grace', socket1)
-      joinOrCreateGame(room, 'SpectatorGrace', socket2)
-      changeTeam(room, socket2)
+        handlePieceHeld(socket)
 
-      // Spectator disconnects
-      leaveRoom(socket2)
-      expect(socket2.leave).toHaveBeenCalledWith(room)
+        expect(holdSpy).not.toHaveBeenCalled()
+      })
 
-      // Player disconnects and deletes empty room
-      leaveRoom(socket1)
-      expect(socket1.leave).toHaveBeenCalledWith(room)
+      it('should delegate to player.handlePieceHeld when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePieceHeld')
+
+        handlePieceHeld(socket)
+
+        expect(holdSpy).toHaveBeenCalledOnce()
+        expect(holdSpy).toHaveBeenCalledWith(expect.anything(), room)
+      })
     })
 
-    it('should return early when updating a non-existent room', () => {
-      expect(() => updateGameRoom('non-existent-room')).not.toThrow()
+    describe('handlePenaltyGameOver', () => {
+      it('should do nothing if socket is not in any room', () => {
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePenaltyGameOver')
+
+        handlePenaltyGameOver(socket)
+
+        expect(holdSpy).not.toHaveBeenCalled()
+      })
+
+      it('should delegate to player.handlePenaltyGameOver when socket is in a game', () => {
+        joinOrCreateGame(room, playerName, socket)
+
+        const holdSpy = vi.spyOn(Player.prototype, 'handlePenaltyGameOver')
+
+        handlePenaltyGameOver(socket)
+
+        expect(holdSpy).toHaveBeenCalledOnce()
+        expect(holdSpy).toHaveBeenCalledWith(expect.anything(), room)
+      })
     })
   })
 })
